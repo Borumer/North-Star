@@ -4,6 +4,9 @@ import 'package:flutter/cupertino.dart';
 import 'package:NorthStar/safehouse.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:geolocator/geolocator.dart';
+import 'dart:typed_data';
+import 'dart:ui' as ui;
+import 'package:flutter/services.dart';
 
 import 'database.service.dart';
 
@@ -15,6 +18,7 @@ class MyMap extends StatefulWidget {
 
 class MapState extends State<MyMap> {
   Position _position;
+  BitmapDescriptor pinLocationIcon;
   Set<Marker> _markers = {};
 
   final firebaseDatabase = new FirebaseDatabase();
@@ -23,7 +27,24 @@ class MapState extends State<MyMap> {
   void initState() {
     super.initState();
     _getCurrentLocation();
-    // setCustomMapPin();
+    setCustomMapPin("green");
+  }
+
+  Future<Uint8List> getBytesFromAsset(String path, int width) async {
+    ByteData data = await rootBundle.load(path);
+    ui.Codec codec = await ui.instantiateImageCodec(data.buffer.asUint8List(),
+        targetWidth: width);
+    ui.FrameInfo fi = await codec.getNextFrame();
+    return (await fi.image.toByteData(format: ui.ImageByteFormat.png))
+        .buffer
+        .asUint8List();
+  }
+
+  void setCustomMapPin(String color) async {
+    // Retrieve image as bytes so it is resizable
+    var pinLocationBytes =
+        await getBytesFromAsset('assets/images/' + color + '_pin.png', 100);
+    pinLocationIcon = BitmapDescriptor.fromBytes(pinLocationBytes);
   }
 
   _getCurrentLocation() {
@@ -115,6 +136,7 @@ class MapState extends State<MyMap> {
       print(_position.latitude);
 
       return GoogleMap(
+        myLocationEnabled: true,
         onMapCreated: _onMapCreated,
         markers: _markers,
         initialCameraPosition: CameraPosition(
