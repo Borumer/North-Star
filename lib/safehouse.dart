@@ -69,6 +69,11 @@ class SafehouseState extends State<MySafehouse> {
                 ),
                 onTap: () {
                   //Add Function
+                  print(_controller.isOpened);
+                  _controller.show();
+                  loadJson().then((data) {
+
+                  });
                 },
               ),
             ],
@@ -130,15 +135,6 @@ class SafehouseState extends State<MySafehouse> {
                   elevation: 5,
                   margin: EdgeInsets.all(10),
                 ),
-                onTap: () {
-                  //Add Function
-                  print(_controller.isOpened);
-                  _controller.show();
-                  loadJson().then((data) {
-                    
-                  });
-                },
-              ),
             ],
           ),
         ),
