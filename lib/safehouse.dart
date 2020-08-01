@@ -130,8 +130,7 @@ class SafehouseState extends State<MySafehouse> {
                   print(_controller.isOpened);
                   _controller.show();
                   loadJson().then((data) {
-                    print("Data: " + data.toString());
-                    print("Yup");
+                    
                   });
                 },
               ),
