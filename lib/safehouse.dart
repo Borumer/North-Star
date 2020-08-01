@@ -93,7 +93,7 @@ class SafehouseState extends State<MySafehouse> {
                 ),
                 title: Text('Maximum Capacity'),
                 trailing: Text(
-                  'None',
+                  '30',
                   style: TextStyle(fontSize: 16, color: Colors.grey[500]),
                 ),
                 onTap: () {
@@ -138,7 +138,7 @@ class SafehouseState extends State<MySafehouse> {
                   Icons.message,
                   color: Colors.black,
                 ),
-                title: Text('SMS Owner'),
+                title: Text('SMS'),
                 subtitle: Text('Safehouse Owner'),
                 onTap: () {
                   launch("sms:PHONE_NUMBER");
