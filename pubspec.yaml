@@ -56,6 +56,7 @@ flutter:
     - assets/images/green_pin.png
     - assets/images/red_pin.png
     - assets/images/yellow_pin.png
+    - assets/Fakedata.json
 
   # An image asset can refer to one or more resolution-specific "variants", see
   # https://flutter.dev/assets-and-images/#resolution-aware.

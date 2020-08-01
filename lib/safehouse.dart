@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:solid_bottom_sheet/solid_bottom_sheet.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:flutter/services.dart';
+import 'dart:convert';
 
 class MySafehouse extends StatefulWidget {
   MySafehouse({Key key, this.title}) : super(key: key);
@@ -34,6 +36,11 @@ class SafehouseState extends State<MySafehouse> {
 
   double screenWidth(BuildContext context, {double dividedBy = 1}) {
     return screenSize(context).width / dividedBy;
+  }
+
+  loadJson() async {
+    return rootBundle.loadString('assets/Fakedata.json')
+        .then((response) => json.decode(response));
   }
 
   SolidController _controller = SolidController();
@@ -122,7 +129,10 @@ class SafehouseState extends State<MySafehouse> {
                   //Add Function
                   print(_controller.isOpened);
                   _controller.show();
-                  print("Yup");
+                  loadJson().then((data) {
+                    print("Data: " + data.toString());
+                    print("Yup");
+                  });
                 },
               ),
             ],

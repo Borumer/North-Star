@@ -41,7 +41,6 @@ class MapState extends State<MyMap> {
   }
 
   Future _onMapCreated(GoogleMapController controller) async {
-
     mapController = controller;
 
     setState(() {
@@ -90,6 +89,7 @@ class MapState extends State<MyMap> {
 
   _getCurrentLocation() {
     final Geolocator geolocator = Geolocator()..forceAndroidLocationManager;
+
 
     geolocator
         .getCurrentPosition(desiredAccuracy: LocationAccuracy.best)
