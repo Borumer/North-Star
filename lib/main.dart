@@ -14,14 +14,16 @@ class MyApp extends StatelessWidget {
     return MaterialApp(
       title: 'North Star',
       theme: ThemeData(
-        primarySwatch: Colors.orange,
-        canvasColor: Colors.transparent,
+        primaryColor: Colors.black,
+        indicatorColor: Colors.black,
+        canvasColor: Colors.white,
         visualDensity: VisualDensity.adaptivePlatformDensity,
       ),
       home: HomePage(title: 'North Star'),
     );
   }
 }
+
 class HomePage extends StatefulWidget {
   HomePage({Key key, this.title}) : super(key: key);
 
@@ -35,10 +37,13 @@ class _HomePageState extends State<HomePage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: Text(widget.title)
-      ),
-      body: MyMap()
-    );
+        appBar: AppBar(
+          title: Text(
+            widget.title,
+            style: TextStyle(color: Colors.white),
+          ),
+          backgroundColor: Colors.black,
+        ),
+        body: MyMap());
   }
 }

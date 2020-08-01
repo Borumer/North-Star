@@ -1,3 +1,4 @@
+import 'package:NorthStar/database.service.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:solid_bottom_sheet/solid_bottom_sheet.dart';
@@ -51,26 +52,25 @@ class SafehouseState extends State<MySafehouse> {
     return ListView(
       padding: const EdgeInsets.all(4),
       children: <Widget>[
-        Container(
-          margin: EdgeInsets.symmetric(vertical: 10.0),
-          height: 200.0,
-          child: ListView(
-            scrollDirection: Axis.horizontal,
+        Card(
+          shadowColor: Colors.white,
+          color: Colors.black,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
             children: <Widget>[
-              for (int i = 0; i < 5; i++)
-                Card(
-                  semanticContainer: true,
-                  clipBehavior: Clip.antiAlias,
-                  child: Image.network(
-                    'https://placeimg.com/640/480/any',
-                    fit: BoxFit.fill,
-                  ),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(10.0),
-                  ),
-                  elevation: 5,
-                  margin: EdgeInsets.all(10),
+              ListTile(
+                leading: Icon(
+                  Icons.navigation,
+                  color: Colors.white,
                 ),
+                title: Text(
+                  'Get Directions',
+                  style: TextStyle(color: Colors.white),
+                ),
+                onTap: () {
+                  //Add Function
+                },
+              ),
             ],
           ),
         ),
@@ -100,7 +100,7 @@ class SafehouseState extends State<MySafehouse> {
                 ),
                 title: Text('Maximum Capacity'),
                 trailing: Text(
-                  '30',
+                  'None',
                   style: TextStyle(fontSize: 16, color: Colors.grey[500]),
                 ),
                 onTap: () {
@@ -110,20 +110,25 @@ class SafehouseState extends State<MySafehouse> {
             ],
           ),
         ),
-        Card(
-          shadowColor: Colors.white,
-          color: Colors.black,
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
+        Container(
+          margin: EdgeInsets.symmetric(vertical: 5.0),
+          height: 200.0,
+          child: ListView(
+            scrollDirection: Axis.horizontal,
             children: <Widget>[
-              ListTile(
-                leading: Icon(
-                  Icons.navigation,
-                  color: Colors.white,
-                ),
-                title: Text(
-                  'Get Directions',
-                  style: TextStyle(color: Colors.white),
+              for (int i = 0; i < 5; i++)
+                Card(
+                  semanticContainer: true,
+                  clipBehavior: Clip.antiAlias,
+                  child: Image.network(
+                    'https://placeimg.com/640/480/any',
+                    fit: BoxFit.fill,
+                  ),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(10.0),
+                  ),
+                  elevation: 5,
+                  margin: EdgeInsets.all(10),
                 ),
                 onTap: () {
                   //Add Function
@@ -200,7 +205,7 @@ class SafehouseState extends State<MySafehouse> {
                           builder: (BuildContext context) {
                             return SimpleDialog(
                               title: const Text(
-                                'Decalaring Compromised',
+                                'Declaring Compromised',
                                 style: TextStyle(color: Colors.white),
                               ),
                               backgroundColor: Colors.black,
