@@ -1,5 +1,3 @@
-import 'dart:collection';
-
 import 'package:NorthStar/database.service.dart';
 import 'package:NorthStar/strings.dart';
 import 'package:flutter/material.dart';
@@ -8,7 +6,6 @@ import 'package:flutter_polyline_points/flutter_polyline_points.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:solid_bottom_sheet/solid_bottom_sheet.dart';
 import 'package:url_launcher/url_launcher.dart';
-import 'dart:math' as Math;
 import 'package:geolocator/geolocator.dart';
 
 class Safehouse {
