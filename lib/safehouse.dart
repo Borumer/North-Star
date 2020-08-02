@@ -59,35 +59,6 @@ class SafehouseState extends State<MySafehouse> {
 
   SolidController _controller = SolidController();
 
-  // Method for retrieving the address
-
-  _getAddress() async {
-    final startAddressController = TextEditingController();
-    try {
-      // Places are retrieved using the coordinates
-      List<Placemark> p = await widget.geolocator.placemarkFromCoordinates(
-          widget.userLocation.latitude, widget.userLocation.longitude);
-
-      // Taking the most probable result
-      Placemark place = p[0];
-
-      setState(() {
-
-        // Structuring the address
-        _currentAddress =
-        "${place.name}, ${place.locality}, ${place.postalCode}, ${place.country}";
-
-        // Update the text of the TextField
-        startAddressController.text = _currentAddress;
-
-        // Setting the user's present location as the starting address
-        _startAddress = _currentAddress;
-      });
-    } catch (e) {
-      print(e);
-    }
-  }
-
   Widget build(BuildContext context) {
     // minHeight: screenHeight(context, dividedBy: 3.1),
     // maxHeight: screenHeight(context, dividedBy: 1.5),
@@ -167,10 +138,10 @@ class SafehouseState extends State<MySafehouse> {
                       // Adding the polyline to the map
                       polylines[id] = polyline;
                     }
-                   // _createPolylines(widget.userLocation, new Position(longitude: addressData["longitude"], latitude: addressData["latitude"]));
+                    _createPolylines(widget.userLocation, new Position(longitude: addressData["longitude"], latitude: addressData["latitude"]));
                     setState(() {
                       widget.markers.add(destinationMarker);
-                      //widget.polylines = Set<Polyline>.of(polylines.values);
+                      widget.polylines = Set<Polyline>.of(polylines.values);
                     });
                   });
                 },

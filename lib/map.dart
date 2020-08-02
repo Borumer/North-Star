@@ -7,7 +7,8 @@ import 'package:geolocator/geolocator.dart';
 import 'dart:typed_data';
 import 'dart:ui' as ui;
 import 'package:flutter/services.dart';
-import 'database.service.dart';
+import 'dart:convert';
+import 'dart:math' as Math;
 
 class MyMap extends StatefulWidget {
   MyMap({Key key}) : super(key: key);
@@ -87,6 +88,11 @@ class MapState extends State<MyMap> {
   Future _onMapCreated(GoogleMapController controller) async {
     mapController = controller;
 
+    loadJson() async {
+      return rootBundle.loadString('assets/Fakedata.json')
+          .then((response) => json.decode(response));
+    }
+
     setState(() {
       _markers.add(
         Marker(
@@ -127,6 +133,33 @@ class MapState extends State<MyMap> {
           },
         ),
       );
+
+    loadJson().then((data) async {
+      for (var addressData in data) {
+        String _destinationAddress = addressData["StreetNumber"].toString() +
+            " " + addressData["StreetName"].toString() + ", " +
+            addressData["City"].toString() + addressData["state"].toString();
+        _destinationAddress = addressData["longitude"].toString() + "," +
+            addressData["latitude"].toString();
+        print(_destinationAddress);
+
+        // Destination Location Marker
+        Marker destinationMarker = Marker(
+          markerId: MarkerId(addressData["estimated_population"].toString()),
+          position: LatLng(addressData["latitude"], addressData["longitude"]),
+          infoWindow: InfoWindow(
+            title: 'Destination',
+            snippet: _destinationAddress,
+          ),
+          icon: pinLocationIcon,
+        );
+        _markers.add(destinationMarker);
+      }
+
+    });
+
+
+
     });
   }
 
