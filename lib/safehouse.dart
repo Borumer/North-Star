@@ -84,7 +84,7 @@ class MySafehouse extends StatefulWidget {
   final Geolocator geolocator;
 
   Set<Marker> markers;
-  Set<Polyline> polylines;
+  final Set<Polyline> polylines;
 
   @override
   SafehouseState createState() => SafehouseState();
@@ -122,7 +122,6 @@ class SafehouseState extends State<MySafehouse> {
     _createRoute() {
       _controller.show();
       loadJson().then((data) async {
-
         // Object for PolylinePoints
         PolylinePoints polylinePoints;
         // List of coordinates to join
@@ -132,28 +131,23 @@ class SafehouseState extends State<MySafehouse> {
         Map<PolylineId, Polyline> polylines = {};
 
         // Create the polylines for showing the route between two places
+        // Create the polylines for showing the route between two places
         _createPolylines(Position start, Position destination) async {
-          // Initializing PolylinePoints
+// Initializing PolylinePoints
           polylinePoints = PolylinePoints();
           // Generating the list of coordinates to be used for
           // drawing the polylines
-          PolylineResult result =
-          await polylinePoints.getRouteBetweenCoordinates(
+          PolylineResult result = await polylinePoints.getRouteBetweenCoordinates(
             apiKey, // Google Maps API Key
             PointLatLng(start.latitude, start.longitude),
-            PointLatLng(
-                destination.latitude, destination.longitude),
-            travelMode: TravelMode.walking,
+            PointLatLng(destination.latitude, destination.longitude),
+            travelMode: TravelMode.transit,
           );
           // Adding the coordinates to the list
           if (result.points.isNotEmpty) {
             result.points.forEach((PointLatLng point) {
-              polylineCoordinates
-                  .add(LatLng(point.latitude, point.longitude));
+              polylineCoordinates.add(LatLng(point.latitude, point.longitude));
             });
-            print("There ARE coordinates");
-          } else {
-            print("No coordinates");
           }
           // Defining an ID
           PolylineId id = PolylineId('poly');
@@ -164,19 +158,15 @@ class SafehouseState extends State<MySafehouse> {
             points: polylineCoordinates,
             width: 3,
           );
-          print(polyline);
           // Adding the polyline to the map
           polylines[id] = polyline;
         }
 
         _createPolylines(widget.userLocation, widget.safehouseInfo.markerPos);
-
         setState(() {
-          widget.polylines = Set<Polyline>.of(polylines.values);
-          print("Polylines: " + polylines.toString());
-          print("Polyline Coordinates " +
-              polylineCoordinates.toString());
+          widget.polylines.addAll(Set<Polyline>.of(polylines.values));
         });
+        print("Polyline Coordinates " + polylineCoordinates.toString());
       });
     }
 

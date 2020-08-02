@@ -39,4 +39,9 @@ class DatabaseService {
     var db = FirebaseDatabase.instance.reference();
     db.child("Safehouses").child(index.toString()).child(property).set(value);
   }
+
+  // TODO Connect marker database listener to UI
+  // TODO Finish drawing routes (polylines)
+  // TODO Finish addmarker.dart
+
 }

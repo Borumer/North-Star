@@ -37,6 +37,7 @@ class MapState extends State<MyMap> {
     super.initState();
     _getCurrentLocation();
     setCustomMapPins();
+    shownPolylines = <Polyline>{};
     displayCurrentSafehouses();
   }
 
@@ -252,9 +253,9 @@ class MapState extends State<MyMap> {
               // var databaseService = new DatabaseService(38.29, -122.28);
               // var safehouse = await databaseService.getAllSafehouses();
               if (!data[i]["compromised"]) {
-                print("Runtime type of safehouse json data = " + data[i].runtimeType.toString());
                 Safehouse currentSafehouse = Safehouse.fromJSON(data[i]);
                 print(data[i]);
+                print(shownPolylines);
                 showModalBottomSheet<void>(
                   context: context,
                   isScrollControlled: true,
