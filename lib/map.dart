@@ -7,8 +7,6 @@ import 'package:geolocator/geolocator.dart';
 import 'dart:typed_data';
 import 'dart:ui' as ui;
 import 'package:flutter/services.dart';
-import 'dart:convert';
-import 'dart:math' as Math;
 
 import 'database.service.dart';
 
@@ -229,13 +227,8 @@ class MapState extends State<MyMap> {
           (data) async {
         print("Length: " + data.length.toString());
         for (var i = 0; i < data.length; i++) {
-          String markerAddress = data[i]["streetNumber"].toString() +
-              " " +
-              data[i]["streetName"].toString() +
-              ", " +
-              data[i]["city"].toString() +
-              " " +
-              data[i]["state"].toString();
+
+
 
           var _icon;
           if (data[i]["compromised"]) { // If the safehouse is compromised
@@ -259,11 +252,13 @@ class MapState extends State<MyMap> {
               // var databaseService = new DatabaseService(38.29, -122.28);
               // var safehouse = await databaseService.getAllSafehouses();
               if (!data[i]["compromised"]) {
+                print("Runtime type of safehouse json data = " + data[i].runtimeType.toString());
+                Safehouse currentSafehouse = Safehouse.fromJSON(data[i]);
+                print(data[i]);
                 showModalBottomSheet<void>(
                   context: context,
                   isScrollControlled: true,
                   builder: (BuildContext context) {
-                    Safehouse currentSafehouse = new Safehouse(data[i]);
                     return new Container(
                       height: screenHeight(context, dividedBy: 1.5),
                       color: Colors
@@ -280,15 +275,7 @@ class MapState extends State<MyMap> {
                         child: new Center(
                           child: MySafehouse(
                             index: i,
-                            name: data[i]["name"],
-                            address: markerAddress,
-                            markerLatitude: latitude,
-                            markerLongitude: longitude,
-                            capacity: data[i]["capacity"],
-                            reserved: data[i]["reserved"],
-                            compromised: data[i]["compromised"],
-                            ownerName: data[i]["ownerName"],
-                            phoneNum: data[i]["phoneNum"],
+                            safehouseInfo: currentSafehouse,
                             userLocation: _position,
                             geolocator: geolocator,
                             markers: _markers,

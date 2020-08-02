@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/cupertino.dart';
-import 'package:geolocator/geolocator.dart';
 import 'package:NorthStar/map.dart';
 
 void main() {

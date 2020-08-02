@@ -1,3 +1,5 @@
+import 'dart:collection';
+
 import 'package:NorthStar/database.service.dart';
 import 'package:NorthStar/strings.dart';
 import 'package:flutter/material.dart';
@@ -6,8 +8,6 @@ import 'package:flutter_polyline_points/flutter_polyline_points.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:solid_bottom_sheet/solid_bottom_sheet.dart';
 import 'package:url_launcher/url_launcher.dart';
-import 'package:flutter/services.dart';
-import 'dart:convert';
 import 'dart:math' as Math;
 import 'package:geolocator/geolocator.dart';
 
@@ -19,15 +19,42 @@ class Safehouse {
     this.compromised,
     this.ownerName,
     this.markerPos,
-    this.phoneNum
+    this.phoneNum,
+    this.name
   });
 
+  factory Safehouse.fromJSON(Map<dynamic, dynamic> json) => _itemFromJSON(json);
+
+  static Safehouse _itemFromJSON(Map<dynamic, dynamic> json) {
+    String markerAddress = json["streetNumber"].toString() +
+        " " +
+        json["streetName"].toString() +
+        ", " +
+        json["city"].toString() +
+        " " +
+        json["state"].toString();
+
+    return Safehouse(
+      name: json['name'] as String,
+      address: markerAddress,
+      capacity: json['capacity'] as int,
+      reserved: json['reserved'] as int,
+      compromised: json['compromised'] as bool,
+      ownerName: json['ownerName'] as String,
+      markerPos: new Position(latitude: json['latitude'], longitude: json['longitude']),
+      phoneNum: json['phoneNum']
+    );
+
+  }
+
+  /// The name of the safehouse
+  final String name;
   /// The physical address of the safehouse
   final String address;
   /// The number of people able to be accomodated at the safehouse
   final int capacity;
   /// Whether the safehouse is reserved for the user
-  bool reserved;
+  int reserved;
   /// Whether the safehouse is compromised by white slavecatchers
   bool compromised;
   /// The name of the safehouse owner
@@ -43,15 +70,7 @@ class MySafehouse extends StatefulWidget {
   MySafehouse({
     Key key,
     this.index,
-    this.name,
-    this.address,
-    this.markerLatitude,
-    this.markerLongitude,
-    this.capacity,
-    this.reserved,
-    this.compromised,
-    this.ownerName,
-    this.phoneNum,
+    this.safehouseInfo,
     this.title,
     this.userLocation,
     this.geolocator,
@@ -61,18 +80,7 @@ class MySafehouse extends StatefulWidget {
 
   final int index;
 
-  final String name;
-  final String address;
-
-  final String ownerName;
-  final String phoneNum;
-
-  final double markerLatitude;
-  final double markerLongitude;
-
-  final int capacity;
-  final int reserved;
-  final bool compromised;
+  final Safehouse safehouseInfo;
 
   final String title;
   final Position userLocation;
@@ -86,8 +94,6 @@ class MySafehouse extends StatefulWidget {
 }
 
 class SafehouseState extends State<MySafehouse> {
-  String _currentAddress;
-  String _startAddress;
 
   final _formKey = GlobalKey<FormState>();
 
@@ -114,14 +120,11 @@ class SafehouseState extends State<MySafehouse> {
     // maxHeight: screenHeight(context, dividedBy: 1.5),
 
     var databaseService =
-        new DatabaseService(widget.markerLatitude, widget.markerLongitude);
+        new DatabaseService(widget.safehouseInfo.markerPos.latitude, widget.safehouseInfo.markerPos.longitude);
 
     _createRoute() {
       _controller.show();
       loadJson().then((data) async {
-        int randomInd = Math.Random().nextInt(10);
-        var addressData = data[randomInd];
-        String _destinationAddress = widget.address;
 
         // Object for PolylinePoints
         PolylinePoints polylinePoints;
@@ -169,11 +172,7 @@ class SafehouseState extends State<MySafehouse> {
           polylines[id] = polyline;
         }
 
-        _createPolylines(
-            widget.userLocation,
-            new Position(
-                longitude: addressData["longitude"],
-                latitude: addressData["latitude"]));
+        _createPolylines(widget.userLocation, widget.safehouseInfo.markerPos);
 
         setState(() {
           widget.polylines = Set<Polyline>.of(polylines.values);
@@ -197,7 +196,7 @@ class SafehouseState extends State<MySafehouse> {
                   Icons.home,
                   color: Colors.black,
                 ),
-                title: Text(widget.address),
+                title: Text(widget.safehouseInfo.address),
                 onTap: () {
                   return false;
                 },
@@ -237,7 +236,7 @@ class SafehouseState extends State<MySafehouse> {
                 ),
                 title: Text('Maximum Capacity'),
                 trailing: Text(
-                  widget.capacity.toString(),
+                  widget.safehouseInfo.capacity.toString(),
                   style: TextStyle(fontSize: 16, color: Colors.grey[500]),
                 ),
                 onTap: () {
@@ -251,7 +250,7 @@ class SafehouseState extends State<MySafehouse> {
                 ),
                 title: Text('Expected Visitors'),
                 trailing: Text(
-                  widget.reserved.toString(),
+                  widget.safehouseInfo.reserved.toString(),
                   style: TextStyle(fontSize: 16, color: Colors.grey[500]),
                 ),
                 onTap: () {
@@ -295,9 +294,9 @@ class SafehouseState extends State<MySafehouse> {
                   color: Colors.black,
                 ),
                 title: Text('SMS'),
-                subtitle: Text('Safehouse Owner: ' + widget.ownerName),
+                subtitle: Text('Safehouse Owner: ' + widget.safehouseInfo.ownerName),
                 onTap: () {
-                  launch("sms:" + widget.phoneNum);
+                  launch("sms:" + widget.safehouseInfo.phoneNum);
                 },
               ),
               ListTile(
@@ -306,9 +305,9 @@ class SafehouseState extends State<MySafehouse> {
                   color: Colors.black,
                 ),
                 title: Text('Call'),
-                subtitle: Text('Safehouse Owner: ' + widget.ownerName),
+                subtitle: Text('Safehouse Owner: ' + widget.safehouseInfo.ownerName),
                 onTap: () {
-                  launch("tel:" + widget.phoneNum);
+                  launch("tel:" + widget.safehouseInfo.phoneNum);
                 },
               ),
             ],
@@ -318,7 +317,7 @@ class SafehouseState extends State<MySafehouse> {
           mainAxisSize: MainAxisSize.max,
           children: <Widget>[
             Visibility(
-              visible: widget.reserved != widget.capacity,
+              visible: widget.safehouseInfo.reserved != widget.safehouseInfo.capacity,
               child: Expanded(
                 child: Container(
                   margin: EdgeInsets.all(5),
@@ -355,6 +354,9 @@ class SafehouseState extends State<MySafehouse> {
                                           }
                                           return null;
                                         },
+                                        style: TextStyle(
+                                          color: Colors.lightGreen
+                                        )
                                       ),
                                       Padding(
                                         padding: const EdgeInsets.symmetric(
