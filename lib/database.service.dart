@@ -9,7 +9,11 @@ class DatabaseService {
     _longitude = longitude;
   }
 
-  getAllSafehouses() async {
+  DatabaseService.empty();
+
+  /// Loop through the safehouse data in database
+  /// Check if each row's coordinates equals the instance variables' longitude and latitude
+  getCurrentSafehouse() async {
     var db = FirebaseDatabase.instance.reference().child("Safehouses");
     db.once().then((DataSnapshot snapshot) {
       for (var safehouse in snapshot.value) {
@@ -23,10 +27,14 @@ class DatabaseService {
     });
   }
 
-  // TODO: Which only pulls out the snapshot.value
-  // Like no for loops and if conditions
-  // TODO: Then return the list
-  // TODO: Take the list, iterate through all the safehouses, make their markers(according to their capacity) and then generate the map
+  // DONE Write function which only pulls out the snapshot.value (like no for loops and if conditions)
+  // DONE Then return the list
+  getAllSafehouses() async {
+    var db = FirebaseDatabase.instance.reference();
+    var safehouseData = await db.child("Safehouses").once();
+    return safehouseData.value;
+  }
+
   // TODO: Then, for each Marker, the onTap will pass the tapped marker's longitude and latitude to the function that is being used right now (the commented one in the first line, change the hard-coded values)
   // That function will give you a single object i.e. our desired safehouse
   // TODO: Then store that object in a global variable as you said, and use the key-value pair magic to give appropriate values to the sheet

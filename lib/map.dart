@@ -10,6 +10,8 @@ import 'package:flutter/services.dart';
 import 'dart:convert';
 import 'dart:math' as Math;
 
+import 'database.service.dart';
+
 class MyMap extends StatefulWidget {
   MyMap({Key key}) : super(key: key);
   @override
@@ -89,8 +91,7 @@ class MapState extends State<MyMap> {
     mapController = controller;
 
     loadJson() async {
-      return rootBundle.loadString('assets/Fakedata.json')
-          .then((response) => json.decode(response));
+      return new DatabaseService.empty().getAllSafehouses();
     }
 
     setState(() {
@@ -121,7 +122,12 @@ class MapState extends State<MyMap> {
                       ),
                     ),
                     child: new Center(
-                      child: MySafehouse(userLocation: _position, geolocator: geolocator, markers: _markers, polylines: shownPolylines),
+                      child: MySafehouse(
+                          userLocation: _position,
+                          geolocator: geolocator,
+                          markers: _markers,
+                          polylines: shownPolylines
+                      ),
                     ),
                   ),
                 );
@@ -133,33 +139,35 @@ class MapState extends State<MyMap> {
           },
         ),
       );
+      // DONE Take the list, iterate through all the safehouses, make their markers(according to their capacity) and then generate the map
+      loadJson().then((data) async {
+        for (var addressData in data) {
+          String _destinationAddress = addressData["StreetNumber"].toString() +
+              " " +
+              addressData["StreetName"].toString() +
+              ", " +
+              addressData["City"].toString() +
+              addressData["state"].toString();
+          _destinationAddress = addressData["longitude"].toString() +
+              "," +
+              addressData["latitude"].toString();
+          print(_destinationAddress);
 
-    loadJson().then((data) async {
-      for (var addressData in data) {
-        String _destinationAddress = addressData["StreetNumber"].toString() +
-            " " + addressData["StreetName"].toString() + ", " +
-            addressData["City"].toString() + addressData["state"].toString();
-        _destinationAddress = addressData["longitude"].toString() + "," +
-            addressData["latitude"].toString();
-        print(_destinationAddress);
-
-        // Destination Location Marker
-        Marker destinationMarker = Marker(
-          markerId: MarkerId(addressData["estimated_population"].toString()),
-          position: LatLng(addressData["latitude"], addressData["longitude"]),
-          infoWindow: InfoWindow(
-            title: 'Destination',
-            snippet: _destinationAddress,
-          ),
-          icon: pinLocationIcon,
-        );
-        _markers.add(destinationMarker);
-      }
-
-    });
-
-
-
+          // Destination Location Marker
+          double lat = addressData["latitude"];
+          double lon = addressData["longitude"];
+          Marker destinationMarker = Marker(
+            markerId: MarkerId(addressData["estimated_population"].toString()),
+            position: LatLng(lat, lon),
+            infoWindow: InfoWindow(
+              title: 'Destination',
+              snippet: _destinationAddress,
+            ),
+            icon: pinLocationIcon,
+          );
+          _markers.add(destinationMarker);
+        }
+      });
     });
   }
 

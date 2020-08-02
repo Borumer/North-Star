@@ -11,10 +11,16 @@ import 'dart:convert';
 import 'dart:math' as Math;
 import 'package:geolocator/geolocator.dart';
 
-
 // ignore: must_be_immutable
 class MySafehouse extends StatefulWidget {
-  MySafehouse({Key key, this.title, this.userLocation, this.geolocator, this.markers, this.polylines}) : super(key: key);
+  MySafehouse(
+      {Key key,
+      this.title,
+      this.userLocation,
+      this.geolocator,
+      this.markers,
+      this.polylines})
+      : super(key: key);
 
   // This widget is the home page of your application. It is stateful, meaning
   // that it has a State object (defined below) that contains fields that affect
@@ -53,8 +59,7 @@ class SafehouseState extends State<MySafehouse> {
   }
 
   loadJson() async {
-    return rootBundle.loadString('assets/Fakedata.json')
-        .then((response) => json.decode(response));
+    return new DatabaseService.empty().getAllSafehouses();
   }
 
   SolidController _controller = SolidController();
@@ -85,20 +90,16 @@ class SafehouseState extends State<MySafehouse> {
                   loadJson().then((data) async {
                     int randomInd = Math.Random().nextInt(10);
                     var addressData = data[randomInd];
-                    String _destinationAddress = addressData["StreetNumber"].toString() + " " + addressData["StreetName"].toString() + ", " + addressData["City"].toString() + addressData["state"].toString();
-                    _destinationAddress = addressData["longitude"].toString() + "," + addressData["latitude"].toString();
-                    print (_destinationAddress);
-
-                    // Destination Location Marker
-                    Marker destinationMarker = Marker(
-                      markerId: MarkerId(addressData["estimated_population"].toString()),
-                      position: LatLng(addressData["latitude"], addressData["longitude"]),
-                      infoWindow: InfoWindow(
-                        title: 'Destination',
-                        snippet: _destinationAddress,
-                      ),
-                      icon: BitmapDescriptor.defaultMarker,
-                    );
+                    String _destinationAddress =
+                        addressData["StreetNumber"].toString() +
+                            " " +
+                            addressData["StreetName"].toString() +
+                            ", " +
+                            addressData["City"].toString() +
+                            addressData["state"].toString();
+                    _destinationAddress = addressData["longitude"].toString() +
+                        "," +
+                        addressData["latitude"].toString();
 
                     // Object for PolylinePoints
                     PolylinePoints polylinePoints;
@@ -109,22 +110,29 @@ class SafehouseState extends State<MySafehouse> {
                     Map<PolylineId, Polyline> polylines = {};
 
                     // Create the polylines for showing the route between two places
-                    _createPolylines(Position start, Position destination) async {
+                    _createPolylines(
+                        Position start, Position destination) async {
 // Initializing PolylinePoints
                       polylinePoints = PolylinePoints();
                       // Generating the list of coordinates to be used for
                       // drawing the polylines
-                      PolylineResult result = await polylinePoints.getRouteBetweenCoordinates(
+                      PolylineResult result =
+                          await polylinePoints.getRouteBetweenCoordinates(
                         apiKey, // Google Maps API Key
                         PointLatLng(start.latitude, start.longitude),
-                        PointLatLng(destination.latitude, destination.longitude),
-                        travelMode: TravelMode.transit,
+                        PointLatLng(
+                            destination.latitude, destination.longitude),
+                        travelMode: TravelMode.walking,
                       );
                       // Adding the coordinates to the list
                       if (result.points.isNotEmpty) {
                         result.points.forEach((PointLatLng point) {
-                          polylineCoordinates.add(LatLng(point.latitude, point.longitude));
+                          polylineCoordinates
+                              .add(LatLng(point.latitude, point.longitude));
                         });
+                        print("There ARE coordinates");
+                      } else {
+                        print("No coordinates");
                       }
                       // Defining an ID
                       PolylineId id = PolylineId('poly');
@@ -135,13 +143,21 @@ class SafehouseState extends State<MySafehouse> {
                         points: polylineCoordinates,
                         width: 3,
                       );
+                      print(polyline);
                       // Adding the polyline to the map
                       polylines[id] = polyline;
                     }
-                    _createPolylines(widget.userLocation, new Position(longitude: addressData["longitude"], latitude: addressData["latitude"]));
+
+                    _createPolylines(
+                        widget.userLocation,
+                        new Position(
+                            longitude: addressData["longitude"],
+                            latitude: addressData["latitude"]));
+
                     setState(() {
-                      widget.markers.add(destinationMarker);
                       widget.polylines = Set<Polyline>.of(polylines.values);
+                      print("Polylines: " + polylines.toString());
+                      print("Polyline Coordinates " + polylineCoordinates.toString());
                     });
                   });
                 },
@@ -161,7 +177,7 @@ class SafehouseState extends State<MySafehouse> {
                 ),
                 title: Text('Expected Visitors'),
                 trailing: Text(
-                  'None',
+                  '17',
                   style: TextStyle(fontSize: 16, color: Colors.grey[500]),
                 ),
                 onTap: () {
@@ -175,7 +191,7 @@ class SafehouseState extends State<MySafehouse> {
                 ),
                 title: Text('Maximum Capacity'),
                 trailing: Text(
-                  'None',
+                  '30',
                   style: TextStyle(fontSize: 16, color: Colors.grey[500]),
                 ),
                 onTap: () {
