@@ -1,13 +1,20 @@
 import 'package:NorthStar/database.service.dart';
+import 'package:NorthStar/strings.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/cupertino.dart';
+import 'package:flutter_polyline_points/flutter_polyline_points.dart';
+import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:solid_bottom_sheet/solid_bottom_sheet.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:flutter/services.dart';
 import 'dart:convert';
+import 'dart:math' as Math;
+import 'package:geolocator/geolocator.dart';
 
+
+// ignore: must_be_immutable
 class MySafehouse extends StatefulWidget {
-  MySafehouse({Key key, this.title}) : super(key: key);
+  MySafehouse({Key key, this.title, this.userLocation, this.geolocator, this.markers, this.polylines}) : super(key: key);
 
   // This widget is the home page of your application. It is stateful, meaning
   // that it has a State object (defined below) that contains fields that affect
@@ -19,12 +26,18 @@ class MySafehouse extends StatefulWidget {
   // always marked "final".
 
   final String title;
+  final Position userLocation;
+  final Geolocator geolocator;
+  Set<Marker> markers;
+  Set<Polyline> polylines;
 
   @override
   SafehouseState createState() => SafehouseState();
 }
 
 class SafehouseState extends State<MySafehouse> {
+  String _currentAddress;
+  String _startAddress;
   String contactInfo = "Contact Info";
 
   Size screenSize(BuildContext context) {
@@ -45,6 +58,35 @@ class SafehouseState extends State<MySafehouse> {
   }
 
   SolidController _controller = SolidController();
+
+  // Method for retrieving the address
+
+  _getAddress() async {
+    final startAddressController = TextEditingController();
+    try {
+      // Places are retrieved using the coordinates
+      List<Placemark> p = await widget.geolocator.placemarkFromCoordinates(
+          widget.userLocation.latitude, widget.userLocation.longitude);
+
+      // Taking the most probable result
+      Placemark place = p[0];
+
+      setState(() {
+
+        // Structuring the address
+        _currentAddress =
+        "${place.name}, ${place.locality}, ${place.postalCode}, ${place.country}";
+
+        // Update the text of the TextField
+        startAddressController.text = _currentAddress;
+
+        // Setting the user's present location as the starting address
+        _startAddress = _currentAddress;
+      });
+    } catch (e) {
+      print(e);
+    }
+  }
 
   Widget build(BuildContext context) {
     // minHeight: screenHeight(context, dividedBy: 3.1),
@@ -68,11 +110,68 @@ class SafehouseState extends State<MySafehouse> {
                   style: TextStyle(color: Colors.white),
                 ),
                 onTap: () {
-                  //Add Function
-                  print(_controller.isOpened);
                   _controller.show();
-                  loadJson().then((data) {
+                  loadJson().then((data) async {
+                    int randomInd = Math.Random().nextInt(10);
+                    var addressData = data[randomInd];
+                    String _destinationAddress = addressData["StreetNumber"].toString() + " " + addressData["StreetName"].toString() + ", " + addressData["City"].toString() + addressData["state"].toString();
+                    _destinationAddress = addressData["longitude"].toString() + "," + addressData["latitude"].toString();
+                    print (_destinationAddress);
 
+                    // Destination Location Marker
+                    Marker destinationMarker = Marker(
+                      markerId: MarkerId(addressData["estimated_population"].toString()),
+                      position: LatLng(addressData["latitude"], addressData["longitude"]),
+                      infoWindow: InfoWindow(
+                        title: 'Destination',
+                        snippet: _destinationAddress,
+                      ),
+                      icon: BitmapDescriptor.defaultMarker,
+                    );
+
+                    // Object for PolylinePoints
+                    PolylinePoints polylinePoints;
+                    // List of coordinates to join
+                    List<LatLng> polylineCoordinates = [];
+                    // Map storing polylines created by connecting
+                    // two points
+                    Map<PolylineId, Polyline> polylines = {};
+
+                    // Create the polylines for showing the route between two places
+                    _createPolylines(Position start, Position destination) async {
+// Initializing PolylinePoints
+                      polylinePoints = PolylinePoints();
+                      // Generating the list of coordinates to be used for
+                      // drawing the polylines
+                      PolylineResult result = await polylinePoints.getRouteBetweenCoordinates(
+                        apiKey, // Google Maps API Key
+                        PointLatLng(start.latitude, start.longitude),
+                        PointLatLng(destination.latitude, destination.longitude),
+                        travelMode: TravelMode.transit,
+                      );
+                      // Adding the coordinates to the list
+                      if (result.points.isNotEmpty) {
+                        result.points.forEach((PointLatLng point) {
+                          polylineCoordinates.add(LatLng(point.latitude, point.longitude));
+                        });
+                      }
+                      // Defining an ID
+                      PolylineId id = PolylineId('poly');
+                      // Initializing Polyline
+                      Polyline polyline = Polyline(
+                        polylineId: id,
+                        color: Colors.red,
+                        points: polylineCoordinates,
+                        width: 3,
+                      );
+                      // Adding the polyline to the map
+                      polylines[id] = polyline;
+                    }
+                   // _createPolylines(widget.userLocation, new Position(longitude: addressData["longitude"], latitude: addressData["latitude"]));
+                    setState(() {
+                      widget.markers.add(destinationMarker);
+                      //widget.polylines = Set<Polyline>.of(polylines.values);
+                    });
                   });
                 },
               ),

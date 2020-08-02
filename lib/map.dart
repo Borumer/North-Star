@@ -7,7 +7,6 @@ import 'package:geolocator/geolocator.dart';
 import 'dart:typed_data';
 import 'dart:ui' as ui;
 import 'package:flutter/services.dart';
-
 import 'database.service.dart';
 
 class MyMap extends StatefulWidget {
@@ -20,6 +19,8 @@ class MapState extends State<MyMap> {
   Position _position;
   BitmapDescriptor pinLocationIcon;
   Set<Marker> _markers = {};
+  Set<Polyline> shownPolylines;
+  final Geolocator geolocator = Geolocator()..forceAndroidLocationManager;
 
   final firebaseDatabase = new FirebaseDatabase();
 
@@ -48,8 +49,6 @@ class MapState extends State<MyMap> {
   }
 
   _getCurrentLocation() {
-    final Geolocator geolocator = Geolocator()..forceAndroidLocationManager;
-
     geolocator
         .getCurrentPosition(desiredAccuracy: LocationAccuracy.best)
         .then((Position position) {
@@ -91,6 +90,7 @@ class MapState extends State<MyMap> {
     setState(() {
       _markers.add(
         Marker(
+          icon: pinLocationIcon,
           markerId: MarkerId("1"),
           position: getCenter(),
           onTap: () async {
@@ -115,7 +115,7 @@ class MapState extends State<MyMap> {
                       ),
                     ),
                     child: new Center(
-                      child: MySafehouse(),
+                      child: MySafehouse(userLocation: _position, geolocator: geolocator, markers: _markers, polylines: shownPolylines),
                     ),
                   ),
                 );
@@ -132,13 +132,11 @@ class MapState extends State<MyMap> {
 
   Widget build(BuildContext context) {
     if (locationFound()) {
-      print(_position.longitude);
-      print(_position.latitude);
-
       return GoogleMap(
         myLocationEnabled: true,
         onMapCreated: _onMapCreated,
         markers: _markers,
+        polylines: shownPolylines,
         initialCameraPosition: CameraPosition(
           target: LatLng(_position.latitude, _position.longitude),
           zoom: 5.0,
