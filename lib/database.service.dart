@@ -9,33 +9,34 @@ class DatabaseService {
     _longitude = longitude;
   }
 
-  DatabaseService.empty();
+  // DONE Write function which only pulls out the snapshot.value (like no for loops and if conditions)
+  // DONE Then return the list
+  static getAllSafehouses() async {
+    var db = FirebaseDatabase.instance.reference();
+    var safehouseData = await db.child("Safehouses").once();
+    return safehouseData.value;
+  }
 
   /// Loop through the safehouse data in database
   /// Check if each row's coordinates equals the instance variables' longitude and latitude
-  getCurrentSafehouse() async {
+  getCurrentSafehouseIndex() async {
     var db = FirebaseDatabase.instance.reference().child("Safehouses");
     db.once().then((DataSnapshot snapshot) {
-      for (var safehouse in snapshot.value) {
-        if (safehouse["latitude"] == _latitude &&
-            safehouse["longitude"] == _longitude) {
-          print(safehouse);
-          return safehouse;
+      print(_latitude.toString() + " " + _longitude.toString());
+      for (var i = 0; i < snapshot.value.length; i++) {
+        if (snapshot.value[i]["latitude"] == _latitude &&
+            snapshot.value[i]["longitude"] == _longitude) {
+          return i;
         }
       }
       return null;
     });
   }
 
-  // DONE Write function which only pulls out the snapshot.value (like no for loops and if conditions)
-  // DONE Then return the list
-  getAllSafehouses() async {
-    var db = FirebaseDatabase.instance.reference();
-    var safehouseData = await db.child("Safehouses").once();
-    return safehouseData.value;
-  }
-  
   // That function will give you a single object i.e. our desired safehouse
-  // TODO: Then store that object in a global variable as you said, and use the key-value pair magic to give appropriate values to the sheet
   // If it is, you'll have to increment the values in the object, and upload that back to Firebase (which I will do if you don't wanna)
+  updateFirebaseDatabase(int index, String property, Object value) async {
+    var db = FirebaseDatabase.instance.reference();
+    db.child("Safehouses").child(index.toString()).child(property).set(value);
+  }
 }

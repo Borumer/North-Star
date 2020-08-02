@@ -13,27 +13,44 @@ import 'package:geolocator/geolocator.dart';
 
 // ignore: must_be_immutable
 class MySafehouse extends StatefulWidget {
-  MySafehouse(
-      {Key key,
-      this.title,
-      this.userLocation,
-      this.geolocator,
-      this.markers,
-      this.polylines})
-      : super(key: key);
+  MySafehouse({
+    Key key,
+    this.index,
+    this.name,
+    this.address,
+    this.markerLatitude,
+    this.markerLongitude,
+    this.capacity,
+    this.reserved,
+    this.compromised,
+    this.ownerName,
+    this.phoneNum,
+    this.title,
+    this.userLocation,
+    this.geolocator,
+    this.markers,
+    this.polylines,
+  }) : super(key: key);
 
-  // This widget is the home page of your application. It is stateful, meaning
-  // that it has a State object (defined below) that contains fields that affect
-  // how it looks.
+  final int index;
 
-  // This class is the configuration for the state. It holds the values (in this
-  // case the title) provided by the parent (in this case the App widget) and
-  // used by the build method of the State. Fields in a Widget subclass are
-  // always marked "final".
+  final String name;
+  final String address;
+
+  final String ownerName;
+  final String phoneNum;
+
+  final double markerLatitude;
+  final double markerLongitude;
+
+  final int capacity;
+  final int reserved;
+  final bool compromised;
 
   final String title;
   final Position userLocation;
   final Geolocator geolocator;
+
   Set<Marker> markers;
   Set<Polyline> polylines;
 
@@ -44,7 +61,8 @@ class MySafehouse extends StatefulWidget {
 class SafehouseState extends State<MySafehouse> {
   String _currentAddress;
   String _startAddress;
-  String contactInfo = "Contact Info";
+
+  final _formKey = GlobalKey<FormState>();
 
   Size screenSize(BuildContext context) {
     return MediaQuery.of(context).size;
@@ -59,7 +77,7 @@ class SafehouseState extends State<MySafehouse> {
   }
 
   loadJson() async {
-    return new DatabaseService.empty().getAllSafehouses();
+    return DatabaseService.getAllSafehouses();
   }
 
   SolidController _controller = SolidController();
@@ -67,9 +85,31 @@ class SafehouseState extends State<MySafehouse> {
   Widget build(BuildContext context) {
     // minHeight: screenHeight(context, dividedBy: 3.1),
     // maxHeight: screenHeight(context, dividedBy: 1.5),
+
+    var databaseService =
+        new DatabaseService(widget.markerLatitude, widget.markerLongitude);
+
     return ListView(
       padding: const EdgeInsets.all(4),
       children: <Widget>[
+        Card(
+          shadowColor: Colors.black,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: <Widget>[
+              ListTile(
+                leading: Icon(
+                  Icons.home,
+                  color: Colors.black,
+                ),
+                title: Text(widget.address),
+                onTap: () {
+                  return false;
+                },
+              ),
+            ],
+          ),
+        ),
         Card(
           shadowColor: Colors.white,
           color: Colors.black,
@@ -90,16 +130,7 @@ class SafehouseState extends State<MySafehouse> {
                   loadJson().then((data) async {
                     int randomInd = Math.Random().nextInt(10);
                     var addressData = data[randomInd];
-                    String _destinationAddress =
-                        addressData["StreetNumber"].toString() +
-                            " " +
-                            addressData["StreetName"].toString() +
-                            ", " +
-                            addressData["City"].toString() +
-                            addressData["state"].toString();
-                    _destinationAddress = addressData["longitude"].toString() +
-                        "," +
-                        addressData["latitude"].toString();
+                    String _destinationAddress = widget.address;
 
                     // Object for PolylinePoints
                     PolylinePoints polylinePoints;
@@ -157,7 +188,8 @@ class SafehouseState extends State<MySafehouse> {
                     setState(() {
                       widget.polylines = Set<Polyline>.of(polylines.values);
                       print("Polylines: " + polylines.toString());
-                      print("Polyline Coordinates " + polylineCoordinates.toString());
+                      print("Polyline Coordinates " +
+                          polylineCoordinates.toString());
                     });
                   });
                 },
@@ -172,12 +204,12 @@ class SafehouseState extends State<MySafehouse> {
             children: <Widget>[
               ListTile(
                 leading: Icon(
-                  Icons.access_time,
+                  Icons.airline_seat_individual_suite,
                   color: Colors.black,
                 ),
-                title: Text('Expected Visitors'),
+                title: Text('Maximum Capacity'),
                 trailing: Text(
-                  '17',
+                  widget.capacity.toString(),
                   style: TextStyle(fontSize: 16, color: Colors.grey[500]),
                 ),
                 onTap: () {
@@ -186,12 +218,12 @@ class SafehouseState extends State<MySafehouse> {
               ),
               ListTile(
                 leading: Icon(
-                  Icons.airline_seat_individual_suite,
+                  Icons.access_time,
                   color: Colors.black,
                 ),
-                title: Text('Maximum Capacity'),
+                title: Text('Expected Visitors'),
                 trailing: Text(
-                  '30',
+                  widget.reserved.toString(),
                   style: TextStyle(fontSize: 16, color: Colors.grey[500]),
                 ),
                 onTap: () {
@@ -235,9 +267,9 @@ class SafehouseState extends State<MySafehouse> {
                   color: Colors.black,
                 ),
                 title: Text('SMS'),
-                subtitle: Text('Safehouse Owner'),
+                subtitle: Text('Safehouse Owner: ' + widget.ownerName),
                 onTap: () {
-                  launch("sms:PHONE_NUMBER");
+                  launch("sms:" + widget.phoneNum);
                 },
               ),
               ListTile(
@@ -246,9 +278,9 @@ class SafehouseState extends State<MySafehouse> {
                   color: Colors.black,
                 ),
                 title: Text('Call'),
-                subtitle: Text('Safehouse Owner'),
+                subtitle: Text('Safehouse Owner: ' + widget.ownerName),
                 onTap: () {
-                  launch("tel:PHONE_NUMBER");
+                  launch("tel:" + widget.phoneNum);
                 },
               ),
             ],
@@ -267,57 +299,85 @@ class SafehouseState extends State<MySafehouse> {
                     color: Colors.black,
                   ),
                   onPressed: () async {
-                      switch (await showDialog<String>(
-                          context: context,
-                          builder: (BuildContext context) {
-                            // DONE For Reserve, you'll need to give a dialogue for the number of people, and check if it's possible.
-                            return SimpleDialog(
-                              title: const Text(
-                                'Reserve Safehouse',
-                                style: TextStyle(color: Colors.white),
-                              ),
-                              backgroundColor: Colors.black,
-                              children: <Widget>[
-                                ListTile(
-                                  title: Text(
-                                    'This will reserve your spot in the current safehouse',
-                                    style: TextStyle(color: Colors.white),
-                                  ),
-                                ),
-                                ButtonBar(
-                                  alignment: MainAxisAlignment.end,
+                    switch (await showDialog<String>(
+                        context: context,
+                        builder: (BuildContext context) {
+                          // DONE For Reserve, you'll need to give a dialogue for the number of people, and check if it's possible.
+                          return SimpleDialog(
+                            title: const Text(
+                              'Reserve Safehouse',
+                              style: TextStyle(color: Colors.white),
+                            ),
+                            backgroundColor: Colors.black,
+                            children: <Widget>[
+                              Form(
+                                key: _formKey,
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
                                   children: <Widget>[
-                                    OutlineButton(
-                                      textColor: Colors.white,
-                                      borderSide: BorderSide(
-                                        color: Colors.white,
+                                    TextFormField(
+                                      decoration: const InputDecoration(
+                                        hintText: 'Enter your email',
                                       ),
-                                      onPressed: () {
-                                        Navigator.pop(context, "No");
+                                      validator: (value) {
+                                        if (value.isEmpty) {
+                                          return 'Please enter some text';
+                                        }
+                                        return null;
                                       },
-                                      child: const Text('Cancel'),
                                     ),
-                                    RaisedButton(
-                                      textColor: Colors.black,
-                                      color: Colors.white,
-                                      onPressed: () {
-                                        Navigator.pop(context, "Yes");
-                                      },
-                                      child: const Text('Okay'),
+                                    Padding(
+                                      padding: const EdgeInsets.symmetric(
+                                          vertical: 16.0),
+                                      child: RaisedButton(
+                                        onPressed: () {
+                                          // Validate will return true if the form is valid, or false if
+                                          // the form is invalid.
+                                          if (_formKey.currentState
+                                              .validate()) {
+                                            // Process data.
+                                          }
+                                        },
+                                        child: Text('Submit'),
+                                      ),
                                     ),
                                   ],
                                 ),
-                              ],
-                            );
-                          })) {
-                        case "Yes":
+                              ),
+                              ButtonBar(
+                                alignment: MainAxisAlignment.end,
+                                children: <Widget>[
+                                  OutlineButton(
+                                    textColor: Colors.white,
+                                    borderSide: BorderSide(
+                                      color: Colors.white,
+                                    ),
+                                    onPressed: () {
+                                      Navigator.pop(context, "No");
+                                    },
+                                    child: const Text('Cancel'),
+                                  ),
+                                  RaisedButton(
+                                    textColor: Colors.black,
+                                    color: Colors.white,
+                                    onPressed: () {
+                                      Navigator.pop(context, "Yes");
+                                    },
+                                    child: const Text('Okay'),
+                                  ),
+                                ],
+                              ),
+                            ],
+                          );
+                        })) {
+                      case "Yes":
                         //Add Function
-                          break;
-                        case "No":
+                        break;
+                      case "No":
                         //Add Function
-                          break;
-                      }
-                    },
+                        break;
+                    }
+                  },
                   padding: EdgeInsets.all(15),
                 ),
               ),
@@ -326,61 +386,59 @@ class SafehouseState extends State<MySafehouse> {
               child: Container(
                 margin: EdgeInsets.all(5),
                 child: RaisedButton(
-                    child: const Text('Compromised'),
-                    textColor: Colors.white,
-                    color: Colors.black,
-                    padding: EdgeInsets.all(15),
-                    onPressed: () async {
-                      switch (await showDialog<String>(
-                          context: context,
-                          builder: (BuildContext context) {
-                            return SimpleDialog(
-                              title: const Text(
-                                'Declaring Compromised',
-                                style: TextStyle(color: Colors.white),
+                  child: const Text('Compromised'),
+                  textColor: Colors.white,
+                  color: Colors.black,
+                  padding: EdgeInsets.all(15),
+                  onPressed: () async {
+                    switch (await showDialog<String>(
+                        context: context,
+                        builder: (BuildContext context) {
+                          return SimpleDialog(
+                            title: const Text(
+                              'Declaring Compromised',
+                              style: TextStyle(color: Colors.white),
+                            ),
+                            backgroundColor: Colors.black,
+                            children: <Widget>[
+                              ListTile(
+                                title: Text(
+                                  'This will Declare this Safehouse Compromised',
+                                  style: TextStyle(color: Colors.white),
+                                ),
                               ),
-                              backgroundColor: Colors.black,
-                              children: <Widget>[
-                                ListTile(
-                                  title: Text(
-                                    'This will declare this safehouse: Compromised',
-                                    style: TextStyle(color: Colors.white),
-                                  ),
-                                ),
-                                ButtonBar(
-                                  alignment: MainAxisAlignment.end,
-                                  children: <Widget>[
-                                    OutlineButton(
-                                      textColor: Colors.white,
-                                      borderSide: BorderSide(
-                                        color: Colors.white,
-                                      ),
-                                      onPressed: () {
-                                        Navigator.pop(context, "No");
-                                      },
-                                      child: const Text('Cancel'),
-                                    ),
-                                    RaisedButton(
-                                      textColor: Colors.black,
+                              ButtonBar(
+                                alignment: MainAxisAlignment.end,
+                                children: <Widget>[
+                                  OutlineButton(
+                                    textColor: Colors.white,
+                                    borderSide: BorderSide(
                                       color: Colors.white,
-                                      onPressed: () {
-                                        Navigator.pop(context, "Yes");
-                                      },
-                                      child: const Text('Okay'),
                                     ),
-                                  ],
-                                ),
-                              ],
-                            );
-                          })) {
-                            case "Yes":
-                              //Add Function
-                              break;
-                            case "No":
-                              //Add Function
-                              break;
-                          }
+                                    onPressed: () {
+                                      Navigator.pop(context);
+                                    },
+                                    child: const Text('Cancel'),
+                                  ),
+                                  RaisedButton(
+                                    textColor: Colors.black,
+                                    color: Colors.white,
+                                    onPressed: () {
+                                      Navigator.pop(context, "Yes");
+                                    },
+                                    child: const Text('Okay'),
+                                  ),
+                                ],
+                              ),
+                            ],
+                          );
+                        })) {
+                      case "Yes":
+                        databaseService.updateFirebaseDatabase(
+                            widget.index, "compromised", true);
+                        break;
                     }
+                  },
                 ),
               ),
             ),
@@ -388,17 +446,5 @@ class SafehouseState extends State<MySafehouse> {
         ),
       ],
     );
-
-    // Container(
-    //       color: Colors.black,
-    //       height: 50,
-    //       child: Center(
-    //         child: Icon(
-    //           Icons.remove,
-    //           color: Colors.white,
-    //           size: 40,
-    //         ),
-    //       ),
-    //     ),
   }
 }

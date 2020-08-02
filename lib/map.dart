@@ -20,9 +20,16 @@ class MyMap extends StatefulWidget {
 
 class MapState extends State<MyMap> {
   Position _position;
-  BitmapDescriptor pinLocationIcon;
+
+  BitmapDescriptor greenPinLocationIcon;
+  BitmapDescriptor yellowPinLocationIcon;
+  BitmapDescriptor redPinLocationIcon;
+
+  final _formKey = GlobalKey<FormState>();
+
   Set<Marker> _markers = {};
   Set<Polyline> shownPolylines;
+
   final Geolocator geolocator = Geolocator()..forceAndroidLocationManager;
 
   final firebaseDatabase = new FirebaseDatabase();
@@ -31,7 +38,7 @@ class MapState extends State<MyMap> {
   void initState() {
     super.initState();
     _getCurrentLocation();
-    setCustomMapPin("green");
+    setCustomMapPins();
   }
 
   Future<Uint8List> getBytesFromAsset(String path, int width) async {
@@ -44,11 +51,19 @@ class MapState extends State<MyMap> {
         .asUint8List();
   }
 
-  void setCustomMapPin(String color) async {
+  void setCustomMapPins() async {
     // Retrieve image as bytes so it is resizable
-    var pinLocationBytes =
-        await getBytesFromAsset('assets/images/' + color + '_pin.png', 100);
-    pinLocationIcon = BitmapDescriptor.fromBytes(pinLocationBytes);
+    var greenPinLocationBytes =
+        await getBytesFromAsset('assets/images/green_pin.png', 50);
+    greenPinLocationIcon = BitmapDescriptor.fromBytes(greenPinLocationBytes);
+
+    var yellowPinLocationBytes =
+        await getBytesFromAsset('assets/images/yellow_pin.png', 50);
+    yellowPinLocationIcon = BitmapDescriptor.fromBytes(yellowPinLocationBytes);
+
+    var redPinLocationBytes =
+        await getBytesFromAsset('assets/images/red_pin.png', 50);
+    redPinLocationIcon = BitmapDescriptor.fromBytes(redPinLocationBytes);
   }
 
   _getCurrentLocation() {
@@ -64,6 +79,14 @@ class MapState extends State<MyMap> {
   }
 
   GoogleMapController mapController;
+  final textController = TextEditingController();
+
+  @override
+  void dispose() {
+    // Clean up the controller when the widget is disposed.
+    textController.dispose();
+    super.dispose();
+  }
 
   LatLng getCenter() {
     if (locationFound()) return LatLng(_position.latitude, _position.longitude);
@@ -91,85 +114,269 @@ class MapState extends State<MyMap> {
     mapController = controller;
 
     loadJson() async {
-      return new DatabaseService.empty().getAllSafehouses();
+      return DatabaseService.getAllSafehouses();
     }
 
-    setState(() {
-      _markers.add(
-        Marker(
-          icon: pinLocationIcon,
-          markerId: MarkerId("1"),
-          position: getCenter(),
-          onTap: () async {
-            // var databaseService = new DatabaseService(38.29, -122.28);
-            // var safehouse = await databaseService.getAllSafehouses();
-
-            showModalBottomSheet<void>(
-              context: context,
-              isScrollControlled: true,
-              builder: (BuildContext context) {
-                return new Container(
-                  height: screenHeight(context, dividedBy: 1.5),
-                  color: Colors
-                      .transparent, //could change this to Color(0xFF737373),
-                  //so you don't have to change MaterialApp canvasColor
-                  child: new Container(
-                    decoration: new BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: new BorderRadius.only(
-                        topLeft: const Radius.circular(15.0),
-                        topRight: const Radius.circular(15.0),
-                      ),
-                    ),
-                    child: new Center(
-                      child: MySafehouse(
-                          userLocation: _position,
-                          geolocator: geolocator,
-                          markers: _markers,
-                          polylines: shownPolylines
-                      ),
-                    ),
+    setState(
+      () {
+        _markers.add(
+          Marker(
+            markerId: MarkerId("Home"),
+            position: getCenter(),
+            onTap: () async {
+              displaySnackbar(BuildContext context) {
+                final snackBar = SnackBar(
+                  content: Text('Please Enter a Value'),
+                  backgroundColor: Colors.black,
+                  duration: Duration(seconds: 5),
+                  action: SnackBarAction(
+                    label: 'Okay',
+                    textColor: Colors.blue[600],
+                    onPressed: () async {
+                      // Some code to undo the change.
+                    },
                   ),
                 );
-              },
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(10.0),
-              ),
-            );
+                Scaffold.of(context).showSnackBar(snackBar);
+              }
+
+              await showDialog<String>(
+                  context: context,
+                  builder: (BuildContext context) {
+                    // DONE For Reserve, you'll need to give a dialogue for the number of people, and check if it's possible.
+                    return SimpleDialog(
+                      title: const Text(
+                        'Reserve Safehouse',
+                        style: TextStyle(color: Colors.white),
+                      ),
+                      backgroundColor: Colors.black,
+                      children: <Widget>[
+                        Form(
+                          key: _formKey,
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: <Widget>[
+                              Padding(
+                                padding: EdgeInsets.all(20),
+                                child: TextFormField(
+                                  style: TextStyle(
+                                    color: Colors.white,
+                                  ),
+                                  controller: textController,
+                                  decoration: const InputDecoration(
+                                    hintText: 'Enter the Number of Residents',
+                                    hintStyle: TextStyle(color: Colors.white),
+                                    fillColor: Colors.white,
+                                  ),
+                                  validator: (value) {
+                                    if (value.isEmpty) {
+                                      displaySnackbar(context);
+                                    }
+                                    return null;
+                                  },
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        ButtonBar(
+                          alignment: MainAxisAlignment.end,
+                          children: <Widget>[
+                            OutlineButton(
+                              textColor: Colors.white,
+                              borderSide: BorderSide(
+                                color: Colors.white,
+                              ),
+                              onPressed: () {
+                                Navigator.pop(context, "No");
+                              },
+                              child: const Text('Cancel'),
+                            ),
+                            RaisedButton(
+                              textColor: Colors.black,
+                              color: Colors.white,
+                              onPressed: () {
+                                Navigator.pop(context, "Yes");
+                                if (_formKey.currentState.validate()) {
+                                  try {
+                                    int.parse(textController.text);
+                                  } catch (e) {
+                                    print("Woops! Try Again!");
+                                  }
+                                  if (!(textController.text is int)) {
+                                    print(int.parse(textController.text));
+                                  } else if (int.parse(textController.text) >
+                                          0 &&
+                                      int.parse(textController.text) <= 8) {
+                                    print(textController.text);
+                                  }
+                                }
+                              },
+                              child: const Text('Okay'),
+                            ),
+                          ],
+                        ),
+                      ],
+                    );
+                  });
+            },
+          ),
+        );
+        // DONE Take the list, iterate through all the safehouses, make their markers(according to their capacity) and then generate the map
+        loadJson().then(
+          (data) async {
+            // print(data.length);
+            for (var i = 0; i < data.length; i++) {
+              String markerAddress = data[i]["streetNumber"].toString() +
+                  " " +
+                  data[i]["streetName"].toString() +
+                  ", " +
+                  data[i]["city"].toString() +
+                  " " +
+                  data[i]["state"].toString();
+
+              var _icon;
+              if (data[i]["compromised"]) {
+                _icon = redPinLocationIcon;
+              } else if (data[i]["capacity"] == data[i]["reserved"]) {
+                _icon = yellowPinLocationIcon;
+              } else if (data[i]["capacity"] > data[i]["reserved"]) {
+                _icon = greenPinLocationIcon;
+              } else {
+                _icon = BitmapDescriptor.defaultMarker;
+              }
+
+              // Destination Location Marker
+              double latitude = data[i]["latitude"];
+              double longitude = data[i]["longitude"];
+
+              Marker destinationMarker = Marker(
+                markerId: MarkerId("Marker #" + i.toString()),
+                position: LatLng(latitude, longitude),
+                onTap: () async {
+                  // var databaseService = new DatabaseService(38.29, -122.28);
+                  // var safehouse = await databaseService.getAllSafehouses();
+                  if (!data[i]["compromised"]) {
+                    showModalBottomSheet<void>(
+                      context: context,
+                      isScrollControlled: true,
+                      builder: (BuildContext context) {
+                        return new Container(
+                          height: screenHeight(context, dividedBy: 1.5),
+                          color: Colors
+                              .transparent, //could change this to Color(0xFF737373),
+                          //so you don't have to change MaterialApp canvasColor
+                          child: new Container(
+                            decoration: new BoxDecoration(
+                              color: Colors.white,
+                              borderRadius: new BorderRadius.only(
+                                topLeft: const Radius.circular(15.0),
+                                topRight: const Radius.circular(15.0),
+                              ),
+                            ),
+                            child: new Center(
+                              child: MySafehouse(
+                                index: i,
+                                name: data[i]["name"],
+                                address: markerAddress,
+                                markerLatitude: latitude,
+                                markerLongitude: longitude,
+                                capacity: data[i]["capacity"],
+                                reserved: data[i]["reserved"],
+                                compromised: data[i]["compromised"],
+                                ownerName: data[i]["ownerName"],
+                                phoneNum: data[i]["phoneNum"],
+                                userLocation: _position,
+                                geolocator: geolocator,
+                                markers: _markers,
+                                polylines: shownPolylines,
+                              ),
+                            ),
+                          ),
+                        );
+                      },
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(10.0),
+                      ),
+                    );
+                  } else {
+                    final snackBar = SnackBar(
+                      content: Text('This Safehouse is Compromised!'),
+                      backgroundColor: Colors.black,
+                      duration: Duration(seconds: 5),
+                      action: SnackBarAction(
+                        label: 'It is Safe',
+                        textColor: Colors.blue[600],
+                        onPressed: () async {
+                          // Some code to undo the change.
+                          switch (await showDialog<String>(
+                            context: context,
+                            builder: (BuildContext context) {
+                              // DONE For Reserve, you'll need to give a dialogue for the number of people, and check if it's possible.
+                              return SimpleDialog(
+                                title: const Text(
+                                  'Declare Safe?',
+                                  style: TextStyle(color: Colors.white),
+                                ),
+                                backgroundColor: Colors.black,
+                                children: <Widget>[
+                                  ListTile(
+                                    title: Text(
+                                      'This will Declare the Safehouse Safe again',
+                                      style: TextStyle(color: Colors.white),
+                                    ),
+                                  ),
+                                  ButtonBar(
+                                    alignment: MainAxisAlignment.end,
+                                    children: <Widget>[
+                                      OutlineButton(
+                                        textColor: Colors.red,
+                                        borderSide: BorderSide(
+                                          color: Colors.red,
+                                        ),
+                                        onPressed: () {
+                                          Navigator.pop(context, "Cancel");
+                                        },
+                                        child: const Text('Cancel'),
+                                      ),
+                                      RaisedButton(
+                                        textColor: Colors.black,
+                                        color: Colors.white,
+                                        onPressed: () {
+                                          Navigator.pop(context, "Proceed");
+                                        },
+                                        child: const Text('Proceed'),
+                                      ),
+                                    ],
+                                  ),
+                                ],
+                              );
+                            },
+                          )) {
+                            case "Proceed":
+                              //Add Function
+                              var databaseService =
+                                  new DatabaseService(latitude, longitude);
+                              databaseService.updateFirebaseDatabase(
+                                  i, "compromised", false);
+                              break;
+                          }
+                        },
+                      ),
+                    );
+                    // Find the Scaffold in the widget tree and use
+                    // it to show a SnackBar.
+                    Scaffold.of(context).showSnackBar(snackBar);
+                  }
+                },
+                icon: _icon,
+              );
+              _markers.add(destinationMarker);
+            }
           },
-        ),
-      );
-      // DONE Take the list, iterate through all the safehouses, make their markers(according to their capacity) and then generate the map
-      loadJson().then((data) async {
-        for (var addressData in data) {
-          String _destinationAddress = addressData["StreetNumber"].toString() +
-              " " +
-              addressData["StreetName"].toString() +
-              ", " +
-              addressData["City"].toString() +
-              addressData["state"].toString();
-          _destinationAddress = addressData["longitude"].toString() +
-              "," +
-              addressData["latitude"].toString();
-          print(_destinationAddress);
-
-          // Destination Location Marker
-          double lat = addressData["latitude"];
-          double lon = addressData["longitude"];
-          Marker destinationMarker = Marker(
-            markerId: MarkerId(addressData["estimated_population"].toString()),
-
-            position: LatLng(lat, lon),
-            infoWindow: InfoWindow(
-              title: 'Destination',
-              snippet: _destinationAddress, // DONE Pass the tapped marker's longitude and latitude
-            ),
-            icon: pinLocationIcon,
-          );
-          _markers.add(destinationMarker);
-        }
-      });
-    });
+        );
+      },
+    );
   }
 
   Widget build(BuildContext context) {
