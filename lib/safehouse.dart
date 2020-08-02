@@ -1,10 +1,7 @@
 import 'package:NorthStar/database.service.dart';
-import 'package:NorthStar/strings.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/cupertino.dart';
-import 'package:flutter_polyline_points/flutter_polyline_points.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
-import 'package:solid_bottom_sheet/solid_bottom_sheet.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:geolocator/geolocator.dart';
 
@@ -48,16 +45,21 @@ class Safehouse {
   final String name;
   /// The physical address of the safehouse
   final String address;
+
   /// The number of people able to be accomodated at the safehouse
   final int capacity;
-  /// Whether the safehouse is reserved for the user
+
+  /// The number of spaces already reserved at the safehouse (including people already there)
   int reserved;
   /// Whether the safehouse is compromised by white slavecatchers
   bool compromised;
+
   /// The name of the safehouse owner
   final String ownerName;
+
   /// The global position of the safehouse
   final Position markerPos;
+
   /// The phone number to call the safehouse/safehouse owner
   final String phoneNum;
 }
@@ -109,8 +111,6 @@ class SafehouseState extends State<MySafehouse> {
   loadJson() async {
     return DatabaseService.getAllSafehouses();
   }
-
-  SolidController _controller = SolidController();
 
   Widget build(BuildContext context) {
     // minHeight: screenHeight(context, dividedBy: 3.1),
@@ -174,24 +174,6 @@ class SafehouseState extends State<MySafehouse> {
       padding: const EdgeInsets.all(4),
       children: <Widget>[
         Card(
-          shadowColor: Colors.black,
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: <Widget>[
-              ListTile(
-                leading: Icon(
-                  Icons.home,
-                  color: Colors.black,
-                ),
-                title: Text(widget.safehouseInfo.address),
-                onTap: () {
-                  return false;
-                },
-              ),
-            ],
-          ),
-        ),
-        Card(
           shadowColor: Colors.white,
           color: Colors.black,
           child: Column(
@@ -207,6 +189,47 @@ class SafehouseState extends State<MySafehouse> {
                   style: TextStyle(color: Colors.white),
                 ),
                 onTap: _createRoute,
+              ),
+            ],
+          ),
+        ),
+        Container(
+          margin: EdgeInsets.symmetric(vertical: 5.0),
+          height: 200.0,
+          child: ListView(
+            scrollDirection: Axis.horizontal,
+            children: <Widget>[
+              for (int i = 0; i < 5; i++)
+                Card(
+                  semanticContainer: true,
+                  clipBehavior: Clip.antiAlias,
+                  child: Image.network(
+                    'https://placeimg.com/640/480/any',
+                    fit: BoxFit.fill,
+                  ),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(10.0),
+                  ),
+                  elevation: 5,
+                  margin: EdgeInsets.all(10),
+                ),
+            ],
+          ),
+        ),
+        Card(
+          shadowColor: Colors.black,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: <Widget>[
+              ListTile(
+                leading: Icon(
+                  Icons.home,
+                  color: Colors.black,
+                ),
+                title: Text(widget.address),
+                onTap: () {
+                  return false;
+                },
               ),
             ],
           ),
@@ -244,29 +267,6 @@ class SafehouseState extends State<MySafehouse> {
                   return false;
                 },
               ),
-            ],
-          ),
-        ),
-        Container(
-          margin: EdgeInsets.symmetric(vertical: 5.0),
-          height: 200.0,
-          child: ListView(
-            scrollDirection: Axis.horizontal,
-            children: <Widget>[
-              for (int i = 0; i < 5; i++)
-                Card(
-                  semanticContainer: true,
-                  clipBehavior: Clip.antiAlias,
-                  child: Image.network(
-                    'https://placeimg.com/640/480/any',
-                    fit: BoxFit.fill,
-                  ),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(10.0),
-                  ),
-                  elevation: 5,
-                  margin: EdgeInsets.all(10),
-                ),
             ],
           ),
         ),
@@ -329,7 +329,8 @@ class SafehouseState extends State<MySafehouse> {
                                 Form(
                                   key: _formKey,
                                   child: Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
                                     children: <Widget>[
                                       TextFormField(
                                         decoration: const InputDecoration(
@@ -390,10 +391,10 @@ class SafehouseState extends State<MySafehouse> {
                             );
                           })) {
                         case "Yes":
-                        //Add Function
+                          //Add Function
                           break;
                         case "No":
-                        //Add Function
+                          //Add Function
                           break;
                       }
                     },
@@ -402,7 +403,6 @@ class SafehouseState extends State<MySafehouse> {
                 ),
               ),
             ),
-
             Expanded(
               child: Container(
                 margin: EdgeInsets.all(5),

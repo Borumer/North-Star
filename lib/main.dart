@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:NorthStar/map.dart';
+import 'package:NorthStar/addmarker.dart';
 
 void main() {
   runApp(MyApp());
@@ -36,13 +37,30 @@ class _HomePageState extends State<HomePage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-        appBar: AppBar(
-          title: Text(
-            widget.title,
-            style: TextStyle(color: Colors.white),
-          ),
-          backgroundColor: Colors.black,
+      appBar: AppBar(
+        title: Text(
+          widget.title,
+          style: TextStyle(color: Colors.white),
         ),
-        body: MyMap());
+        backgroundColor: Colors.black,
+      ),
+      body: MyMap(),
+      floatingActionButton: FloatingActionButton(
+        backgroundColor: Colors.black,
+        foregroundColor: Colors.black,
+        hoverColor: Colors.black,
+        splashColor: Colors.black,
+        child: Icon(
+          Icons.add_location,
+          color: Colors.white,
+        ),
+        onPressed: () {
+          Navigator.push(
+            context,
+            MaterialPageRoute(builder: (context) => MyAddmarker()),
+          );
+        },
+      ),
+    );
   }
 }

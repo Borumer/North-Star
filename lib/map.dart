@@ -90,8 +90,7 @@ class MapState extends State<MyMap> {
   }
 
   LatLng getCenter() {
-    if (locationFound())
-      return LatLng(_position.latitude, _position.longitude);
+    if (locationFound()) return LatLng(_position.latitude, _position.longitude);
 
     return null;
   }
@@ -163,7 +162,7 @@ class MapState extends State<MyMap> {
                               controller: textController,
                               decoration: const InputDecoration(
                                 hintText: 'Enter the Number of Residents',
-                                hintStyle: TextStyle(color: Colors.white),
+                                hintStyle: TextStyle(color: Colors.grey),
                                 fillColor: Colors.white,
                               ),
                               validator: (value) {
@@ -203,8 +202,7 @@ class MapState extends State<MyMap> {
                               }
                               if (!(textController.text is int)) {
                                 print(int.parse(textController.text));
-                              } else if (int.parse(textController.text) >
-                                  0 &&
+                              } else if (int.parse(textController.text) > 0 &&
                                   int.parse(textController.text) <= 8) {
                                 print(textController.text);
                               }
@@ -225,20 +223,24 @@ class MapState extends State<MyMap> {
   void displayCurrentSafehouses() {
     // DONE Take the list, iterate through all the safehouses, make their markers(according to their capacity) and then generate the map
     loadJson().then(
-          (data) async {
+      (data) async {
         print("Length: " + data.length.toString());
         for (var i = 0; i < data.length; i++) {
 
 
 
           var _icon;
-          if (data[i]["compromised"]) { // If the safehouse is compromised
+          if (data[i]["compromised"]) {
+            // If the safehouse is compromised
             _icon = redPinLocationIcon;
-          } else if (data[i]["capacity"] == data[i]["reserved"]) { // If the safehouse is full
+          } else if (data[i]["capacity"] == data[i]["reserved"]) {
+            // If the safehouse is full
             _icon = yellowPinLocationIcon;
-          } else if (data[i]["capacity"] > data[i]["reserved"]) { // If the safehouse is available
+          } else if (data[i]["capacity"] > data[i]["reserved"]) {
+            // If the safehouse is available
             _icon = greenPinLocationIcon;
-          } else { // If the location is the user's current one
+          } else {
+            // If the location is the user's current one
             _icon = BitmapDescriptor.defaultMarker;
           }
 
@@ -345,9 +347,8 @@ class MapState extends State<MyMap> {
                         },
                       )) {
                         case "Proceed":
-                        //Add Function
-                          var databaseService =
-                          new DatabaseService(latitude, longitude);
+                          //Add Function
+                          var databaseService = new DatabaseService();
                           databaseService.updateFirebaseDatabase(
                               i, "compromised", false);
                           break;
