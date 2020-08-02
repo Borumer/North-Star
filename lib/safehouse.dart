@@ -11,6 +11,33 @@ import 'dart:convert';
 import 'dart:math' as Math;
 import 'package:geolocator/geolocator.dart';
 
+class Safehouse {
+  Safehouse({
+    this.address,
+    this.capacity,
+    this.reserved,
+    this.compromised,
+    this.ownerName,
+    this.markerPos,
+    this.phoneNum
+  });
+
+  /// The physical address of the safehouse
+  final String address;
+  /// The number of people able to be accomodated at the safehouse
+  final int capacity;
+  /// Whether the safehouse is reserved for the user
+  bool reserved;
+  /// Whether the safehouse is compromised by white slavecatchers
+  bool compromised;
+  /// The name of the safehouse owner
+  final String ownerName;
+  /// The global position of the safehouse
+  final Position markerPos;
+  /// The phone number to call the safehouse/safehouse owner
+  final String phoneNum;
+}
+
 // ignore: must_be_immutable
 class MySafehouse extends StatefulWidget {
   MySafehouse({
@@ -89,6 +116,74 @@ class SafehouseState extends State<MySafehouse> {
     var databaseService =
         new DatabaseService(widget.markerLatitude, widget.markerLongitude);
 
+    _createRoute() {
+      _controller.show();
+      loadJson().then((data) async {
+        int randomInd = Math.Random().nextInt(10);
+        var addressData = data[randomInd];
+        String _destinationAddress = widget.address;
+
+        // Object for PolylinePoints
+        PolylinePoints polylinePoints;
+        // List of coordinates to join
+        List<LatLng> polylineCoordinates = [];
+        // Map storing polylines created by connecting
+        // two points
+        Map<PolylineId, Polyline> polylines = {};
+
+        // Create the polylines for showing the route between two places
+        _createPolylines(Position start, Position destination) async {
+          // Initializing PolylinePoints
+          polylinePoints = PolylinePoints();
+          // Generating the list of coordinates to be used for
+          // drawing the polylines
+          PolylineResult result =
+          await polylinePoints.getRouteBetweenCoordinates(
+            apiKey, // Google Maps API Key
+            PointLatLng(start.latitude, start.longitude),
+            PointLatLng(
+                destination.latitude, destination.longitude),
+            travelMode: TravelMode.walking,
+          );
+          // Adding the coordinates to the list
+          if (result.points.isNotEmpty) {
+            result.points.forEach((PointLatLng point) {
+              polylineCoordinates
+                  .add(LatLng(point.latitude, point.longitude));
+            });
+            print("There ARE coordinates");
+          } else {
+            print("No coordinates");
+          }
+          // Defining an ID
+          PolylineId id = PolylineId('poly');
+          // Initializing Polyline
+          Polyline polyline = Polyline(
+            polylineId: id,
+            color: Colors.red,
+            points: polylineCoordinates,
+            width: 3,
+          );
+          print(polyline);
+          // Adding the polyline to the map
+          polylines[id] = polyline;
+        }
+
+        _createPolylines(
+            widget.userLocation,
+            new Position(
+                longitude: addressData["longitude"],
+                latitude: addressData["latitude"]));
+
+        setState(() {
+          widget.polylines = Set<Polyline>.of(polylines.values);
+          print("Polylines: " + polylines.toString());
+          print("Polyline Coordinates " +
+              polylineCoordinates.toString());
+        });
+      });
+    }
+
     return ListView(
       padding: const EdgeInsets.all(4),
       children: <Widget>[
@@ -125,74 +220,7 @@ class SafehouseState extends State<MySafehouse> {
                   'Get Directions',
                   style: TextStyle(color: Colors.white),
                 ),
-                onTap: () {
-                  _controller.show();
-                  loadJson().then((data) async {
-                    int randomInd = Math.Random().nextInt(10);
-                    var addressData = data[randomInd];
-                    String _destinationAddress = widget.address;
-
-                    // Object for PolylinePoints
-                    PolylinePoints polylinePoints;
-                    // List of coordinates to join
-                    List<LatLng> polylineCoordinates = [];
-                    // Map storing polylines created by connecting
-                    // two points
-                    Map<PolylineId, Polyline> polylines = {};
-
-                    // Create the polylines for showing the route between two places
-                    _createPolylines(
-                        Position start, Position destination) async {
-// Initializing PolylinePoints
-                      polylinePoints = PolylinePoints();
-                      // Generating the list of coordinates to be used for
-                      // drawing the polylines
-                      PolylineResult result =
-                          await polylinePoints.getRouteBetweenCoordinates(
-                        apiKey, // Google Maps API Key
-                        PointLatLng(start.latitude, start.longitude),
-                        PointLatLng(
-                            destination.latitude, destination.longitude),
-                        travelMode: TravelMode.walking,
-                      );
-                      // Adding the coordinates to the list
-                      if (result.points.isNotEmpty) {
-                        result.points.forEach((PointLatLng point) {
-                          polylineCoordinates
-                              .add(LatLng(point.latitude, point.longitude));
-                        });
-                        print("There ARE coordinates");
-                      } else {
-                        print("No coordinates");
-                      }
-                      // Defining an ID
-                      PolylineId id = PolylineId('poly');
-                      // Initializing Polyline
-                      Polyline polyline = Polyline(
-                        polylineId: id,
-                        color: Colors.red,
-                        points: polylineCoordinates,
-                        width: 3,
-                      );
-                      print(polyline);
-                      // Adding the polyline to the map
-                      polylines[id] = polyline;
-                    }
-
-                    _createPolylines(
-                        widget.userLocation,
-                        new Position(
-                            longitude: addressData["longitude"],
-                            latitude: addressData["latitude"]));
-
-                    setState(() {
-                      widget.polylines = Set<Polyline>.of(polylines.values);
-                      print("Polylines: " + polylines.toString());
-                      print("Polyline Coordinates " +
-                          polylineCoordinates.toString());
-                    });
-                  });
-                },
+                onTap: _createRoute,
               ),
             ],
           ),
@@ -289,99 +317,103 @@ class SafehouseState extends State<MySafehouse> {
         Row(
           mainAxisSize: MainAxisSize.max,
           children: <Widget>[
-            Expanded(
-              child: Container(
-                margin: EdgeInsets.all(5),
-                child: OutlineButton(
-                  child: const Text('Reserve'),
-                  textColor: Colors.black,
-                  borderSide: BorderSide(
-                    color: Colors.black,
-                  ),
-                  onPressed: () async {
-                    switch (await showDialog<String>(
-                        context: context,
-                        builder: (BuildContext context) {
-                          // DONE For Reserve, you'll need to give a dialogue for the number of people, and check if it's possible.
-                          return SimpleDialog(
-                            title: const Text(
-                              'Reserve Safehouse',
-                              style: TextStyle(color: Colors.white),
-                            ),
-                            backgroundColor: Colors.black,
-                            children: <Widget>[
-                              Form(
-                                key: _formKey,
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: <Widget>[
-                                    TextFormField(
-                                      decoration: const InputDecoration(
-                                        hintText: 'Enter your email',
-                                      ),
-                                      validator: (value) {
-                                        if (value.isEmpty) {
-                                          return 'Please enter some text';
-                                        }
-                                        return null;
-                                      },
-                                    ),
-                                    Padding(
-                                      padding: const EdgeInsets.symmetric(
-                                          vertical: 16.0),
-                                      child: RaisedButton(
-                                        onPressed: () {
-                                          // Validate will return true if the form is valid, or false if
-                                          // the form is invalid.
-                                          if (_formKey.currentState
-                                              .validate()) {
-                                            // Process data.
+            Visibility(
+              visible: widget.reserved != widget.capacity,
+              child: Expanded(
+                child: Container(
+                  margin: EdgeInsets.all(5),
+                  child: OutlineButton(
+                    child: const Text('Reserve'),
+                    textColor: Colors.black,
+                    borderSide: BorderSide(
+                      color: Colors.black,
+                    ),
+                    onPressed: () async {
+                      switch (await showDialog<String>(
+                          context: context,
+                          builder: (BuildContext context) {
+                            // DONE For Reserve, you'll need to give a dialogue for the number of people, and check if it's possible.
+                            return SimpleDialog(
+                              title: const Text(
+                                'Reserve Safehouse',
+                                style: TextStyle(color: Colors.white),
+                              ),
+                              backgroundColor: Colors.black,
+                              children: <Widget>[
+                                Form(
+                                  key: _formKey,
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: <Widget>[
+                                      TextFormField(
+                                        decoration: const InputDecoration(
+                                          hintText: 'Enter your email',
+                                        ),
+                                        validator: (value) {
+                                          if (value.isEmpty) {
+                                            return 'Please enter some text';
                                           }
+                                          return null;
                                         },
-                                        child: Text('Submit'),
                                       ),
+                                      Padding(
+                                        padding: const EdgeInsets.symmetric(
+                                            vertical: 16.0),
+                                        child: RaisedButton(
+                                          onPressed: () {
+                                            // Validate will return true if the form is valid, or false if
+                                            // the form is invalid.
+                                            if (_formKey.currentState
+                                                .validate()) {
+                                              // Process data.
+                                            }
+                                          },
+                                          child: Text('Submit'),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                                ButtonBar(
+                                  alignment: MainAxisAlignment.end,
+                                  children: <Widget>[
+                                    OutlineButton(
+                                      textColor: Colors.white,
+                                      borderSide: BorderSide(
+                                        color: Colors.white,
+                                      ),
+                                      onPressed: () {
+                                        Navigator.pop(context, "No");
+                                      },
+                                      child: const Text('Cancel'),
+                                    ),
+                                    RaisedButton(
+                                      textColor: Colors.black,
+                                      color: Colors.white,
+                                      onPressed: () {
+                                        Navigator.pop(context, "Yes");
+                                      },
+                                      child: const Text('Okay'),
                                     ),
                                   ],
                                 ),
-                              ),
-                              ButtonBar(
-                                alignment: MainAxisAlignment.end,
-                                children: <Widget>[
-                                  OutlineButton(
-                                    textColor: Colors.white,
-                                    borderSide: BorderSide(
-                                      color: Colors.white,
-                                    ),
-                                    onPressed: () {
-                                      Navigator.pop(context, "No");
-                                    },
-                                    child: const Text('Cancel'),
-                                  ),
-                                  RaisedButton(
-                                    textColor: Colors.black,
-                                    color: Colors.white,
-                                    onPressed: () {
-                                      Navigator.pop(context, "Yes");
-                                    },
-                                    child: const Text('Okay'),
-                                  ),
-                                ],
-                              ),
-                            ],
-                          );
-                        })) {
-                      case "Yes":
+                              ],
+                            );
+                          })) {
+                        case "Yes":
                         //Add Function
-                        break;
-                      case "No":
+                          break;
+                        case "No":
                         //Add Function
-                        break;
-                    }
-                  },
-                  padding: EdgeInsets.all(15),
+                          break;
+                      }
+                    },
+                    padding: EdgeInsets.all(15),
+                  ),
                 ),
               ),
             ),
+
             Expanded(
               child: Container(
                 margin: EdgeInsets.all(5),

@@ -39,6 +39,7 @@ class MapState extends State<MyMap> {
     super.initState();
     _getCurrentLocation();
     setCustomMapPins();
+    displayCurrentSafehouses();
   }
 
   Future<Uint8List> getBytesFromAsset(String path, int width) async {
@@ -237,13 +238,13 @@ class MapState extends State<MyMap> {
               data[i]["state"].toString();
 
           var _icon;
-          if (data[i]["compromised"]) {
+          if (data[i]["compromised"]) { // If the safehouse is compromised
             _icon = redPinLocationIcon;
-          } else if (data[i]["capacity"] == data[i]["reserved"]) {
+          } else if (data[i]["capacity"] == data[i]["reserved"]) { // If the safehouse is full
             _icon = yellowPinLocationIcon;
-          } else if (data[i]["capacity"] > data[i]["reserved"]) {
+          } else if (data[i]["capacity"] > data[i]["reserved"]) { // If the safehouse is available
             _icon = greenPinLocationIcon;
-          } else {
+          } else { // If the location is the user's current one
             _icon = BitmapDescriptor.defaultMarker;
           }
 
@@ -262,6 +263,7 @@ class MapState extends State<MyMap> {
                   context: context,
                   isScrollControlled: true,
                   builder: (BuildContext context) {
+                    Safehouse currentSafehouse = new Safehouse(data[i]);
                     return new Container(
                       height: screenHeight(context, dividedBy: 1.5),
                       color: Colors
