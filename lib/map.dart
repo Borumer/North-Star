@@ -158,10 +158,11 @@ class MapState extends State<MyMap> {
           double lon = addressData["longitude"];
           Marker destinationMarker = Marker(
             markerId: MarkerId(addressData["estimated_population"].toString()),
+
             position: LatLng(lat, lon),
             infoWindow: InfoWindow(
               title: 'Destination',
-              snippet: _destinationAddress,
+              snippet: _destinationAddress, // DONE Pass the tapped marker's longitude and latitude
             ),
             icon: pinLocationIcon,
           );

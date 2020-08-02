@@ -266,9 +266,58 @@ class SafehouseState extends State<MySafehouse> {
                   borderSide: BorderSide(
                     color: Colors.black,
                   ),
-                  onPressed: () {
-                    //Add Function
-                  },
+                  onPressed: () async {
+                      switch (await showDialog<String>(
+                          context: context,
+                          builder: (BuildContext context) {
+                            // DONE For Reserve, you'll need to give a dialogue for the number of people, and check if it's possible.
+                            return SimpleDialog(
+                              title: const Text(
+                                'Reserve Safehouse',
+                                style: TextStyle(color: Colors.white),
+                              ),
+                              backgroundColor: Colors.black,
+                              children: <Widget>[
+                                ListTile(
+                                  title: Text(
+                                    'This will reserve your spot in the current safehouse',
+                                    style: TextStyle(color: Colors.white),
+                                  ),
+                                ),
+                                ButtonBar(
+                                  alignment: MainAxisAlignment.end,
+                                  children: <Widget>[
+                                    OutlineButton(
+                                      textColor: Colors.white,
+                                      borderSide: BorderSide(
+                                        color: Colors.white,
+                                      ),
+                                      onPressed: () {
+                                        Navigator.pop(context, "No");
+                                      },
+                                      child: const Text('Cancel'),
+                                    ),
+                                    RaisedButton(
+                                      textColor: Colors.black,
+                                      color: Colors.white,
+                                      onPressed: () {
+                                        Navigator.pop(context, "Yes");
+                                      },
+                                      child: const Text('Okay'),
+                                    ),
+                                  ],
+                                ),
+                              ],
+                            );
+                          })) {
+                        case "Yes":
+                        //Add Function
+                          break;
+                        case "No":
+                        //Add Function
+                          break;
+                      }
+                    },
                   padding: EdgeInsets.all(15),
                 ),
               ),
@@ -324,14 +373,15 @@ class SafehouseState extends State<MySafehouse> {
                               ],
                             );
                           })) {
-                        case "Yes":
-                          //Add Function
-                          break;
-                        case "No":
-                          //Add Function
-                          break;
-                      }
-                    }),
+                            case "Yes":
+                              //Add Function
+                              break;
+                            case "No":
+                              //Add Function
+                              break;
+                          }
+                    }
+                ),
               ),
             ),
           ],

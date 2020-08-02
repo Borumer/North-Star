@@ -34,11 +34,8 @@ class DatabaseService {
     var safehouseData = await db.child("Safehouses").once();
     return safehouseData.value;
   }
-
-  // TODO: Then, for each Marker, the onTap will pass the tapped marker's longitude and latitude to the function that is being used right now (the commented one in the first line, change the hard-coded values)
+  
   // That function will give you a single object i.e. our desired safehouse
   // TODO: Then store that object in a global variable as you said, and use the key-value pair magic to give appropriate values to the sheet
-
-  // TODO: For Reserve, you'll need to give a dialogue for the number of people, and check if it's possible.
   // If it is, you'll have to increment the values in the object, and upload that back to Firebase (which I will do if you don't wanna)
 }
