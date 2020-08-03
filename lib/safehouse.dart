@@ -24,15 +24,7 @@ class Safehouse {
   factory Safehouse.fromJSON(Map<dynamic, dynamic> json) => _itemFromJSON(json);
 
   static Safehouse _itemFromJSON(Map<dynamic, dynamic> json) {
-    String markerAddress = json["streetNumber"].toString() +
-        " " +
-        json["streetName"].toString() +
-        ", " +
-        json["city"].toString() +
-        " " +
-        json["state"].toString() +
-        " " +
-        json["country"].toString();
+    String markerAddress = json["address"].toString();
 
     return Safehouse(
         name: json['name'] as String,
@@ -77,6 +69,7 @@ class Safehouse {
 class MySafehouse extends StatefulWidget {
   MySafehouse({
     Key key,
+    this.isOwner,
     this.index,
     this.safehouseInfo,
     this.title,
@@ -84,9 +77,12 @@ class MySafehouse extends StatefulWidget {
     this.geolocator,
     this.markers,
     this.polylines,
+    this.userID,
   }) : super(key: key);
 
+  final bool isOwner;
   final int index;
+  final String userID;
 
   final Safehouse safehouseInfo;
 
@@ -104,6 +100,7 @@ class MySafehouse extends StatefulWidget {
 class SafehouseState extends State<MySafehouse> {
   final _formKey = GlobalKey<FormState>();
   final textController = TextEditingController();
+  final textController2 = TextEditingController();
 
   Size screenSize(BuildContext context) {
     return MediaQuery.of(context).size;
@@ -346,7 +343,28 @@ class SafehouseState extends State<MySafehouse> {
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: <Widget>[
                                     Padding(
-                                      padding: EdgeInsets.all(20),
+                                      padding: EdgeInsets.all(3),
+                                      child: TextFormField(
+                                        style: TextStyle(
+                                          color: Colors.white,
+                                        ),
+                                        controller: textController2,
+                                        decoration: const InputDecoration(
+                                          hintText: 'Enter Your Name',
+                                          hintStyle:
+                                              TextStyle(color: Colors.grey),
+                                          fillColor: Colors.white,
+                                        ),
+                                        validator: (value) {
+                                          if (value.isEmpty) {
+                                            return 'Please Enter a Name';
+                                          }
+                                          return null;
+                                        },
+                                      ),
+                                    ),
+                                    Padding(
+                                      padding: EdgeInsets.all(3),
                                       child: TextFormField(
                                         style: TextStyle(
                                           color: Colors.white,
@@ -384,16 +402,6 @@ class SafehouseState extends State<MySafehouse> {
                                                     ' Spots Available';
                                               } else {
                                                 Navigator.pop(context);
-                                                //update values
-                                                databaseService
-                                                    .updateFirebaseDatabase(
-                                                        widget.index,
-                                                        "reserved",
-                                                        (widget.safehouseInfo
-                                                                .reserved +
-                                                            int.parse(
-                                                                textController
-                                                                    .text)));
                                                 return Snackbars
                                                     .showReservationComfirmationSnackBar();
                                               }
@@ -425,10 +433,55 @@ class SafehouseState extends State<MySafehouse> {
                                     child: RaisedButton(
                                       textColor: Colors.black,
                                       color: Colors.white,
-                                      onPressed: () {
+                                      onPressed: () async {
                                         if (_formKey.currentState.validate()) {
                                           try {
-                                            int.parse(textController.text);
+                                            var results = await databaseService
+                                                .getPropertyFromFirebaseDatabase(
+                                                    widget.index,
+                                                    "reservations");
+                                            if (results == null) {
+                                              print("It is null");
+                                              databaseService
+                                                  .updateFirebaseDatabase(
+                                                      widget.index,
+                                                      "reservations", {
+                                                widget.userID: [
+                                                  {
+                                                    "spots": int.parse(
+                                                        textController.text)
+                                                  },
+                                                  {
+                                                    "userName":
+                                                        textController2.text
+                                                  }
+                                                ]
+                                              });
+                                            } else {
+                                              print("It is has something: " +
+                                                  results);
+                                              var temp = [];
+                                              for (var result in results) {
+                                                temp.add(result);
+                                              }
+                                              temp.add({
+                                                widget.userID: [
+                                                  {
+                                                    "spots": int.parse(
+                                                        textController.text)
+                                                  },
+                                                  {
+                                                    "userName":
+                                                        textController2.text
+                                                  }
+                                                ]
+                                              });
+                                              databaseService
+                                                  .updateFirebaseDatabase(
+                                                      widget.index,
+                                                      "reservations",
+                                                      temp);
+                                            }
                                             return null;
                                           } catch (e) {
                                             return "Woops";
