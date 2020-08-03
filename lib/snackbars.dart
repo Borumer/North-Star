@@ -13,10 +13,11 @@ class Snackbars {
     Scaffold.of(topLevelContext).showSnackBar(sb);
   }
 
-  static showHome() {
+  static showHome(String text) {
     final message = SnackBar(
       content: Text(
-        'You are Here',
+        // 'This is the Home Marker',
+        text,
         textAlign: TextAlign.center,
       ),
       backgroundColor: Colors.black,

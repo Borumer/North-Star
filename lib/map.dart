@@ -14,7 +14,8 @@ import 'package:uuid/uuid.dart';
 import 'database.service.dart';
 
 class MyMap extends StatefulWidget {
-  MyMap({Key key}) : super(key: key);
+  MyMap({Key key, this.userID}) : super(key: key);
+  final userID;
   @override
   MapState createState() => MapState();
 }
@@ -37,7 +38,6 @@ class MapState extends State<MyMap> {
     super.initState();
     topLevelContext = context;
     shownPolylines = <Polyline>{};
-    setUserID();
     _getCurrentLocation();
     setCustomMapPins();
     displayCurrentSafehouses();
@@ -46,17 +46,6 @@ class MapState extends State<MyMap> {
 
   void setInitialSafehouseData() async {
     liveSafehouses = await DatabaseService.getAllSafehouses();
-  }
-
-  Future<String> setUserID() async {
-    final SharedPreferences prefs = await SharedPreferences.getInstance();
-    if (prefs.getString("uuid") != null) {
-      return prefs.getString("uuid");
-    } else {
-      var uuid = Uuid();
-      var id = uuid.v4();
-      return id;
-    }
   }
 
   Future<Uint8List> getBytesFromAsset(String path, int width) async {
@@ -132,7 +121,7 @@ class MapState extends State<MyMap> {
   }
 
   loadJson() async {
-    print (liveSafehouses);
+    print(liveSafehouses);
     return liveSafehouses;
   }
 
@@ -142,33 +131,50 @@ class MapState extends State<MyMap> {
         markerId: MarkerId("Home"),
         position: getCenter(),
         onTap: () async {
-          Snackbars.showHome();
+          Snackbars.showHome(widget.userID);
+          print(widget.userID);
         },
       ),
     );
   }
 
   void displayCurrentSafehouses() {
-    // DONE Take the list, iterate through all the safehouses, make their markers(according to their capacity) and then generate the map
+    var hasReserved = false;
+
     loadJson().then(
       (data) async {
         if (data == null) return;
 
         for (var i = 0; i < data.length; i++) {
+          var uuid = widget.userID;
+          var isOwner = false;
+
           var _icon;
           if (liveSafehouses[i]["compromised"]) {
             // If the safehouse is compromised
             _icon = redPinLocationIcon;
-          } else if (liveSafehouses[i]["capacity"] == liveSafehouses[i]["reserved"]) {
+          } else if (liveSafehouses[i]["capacity"] ==
+              liveSafehouses[i]["reserved"]) {
             // If the safehouse is full
             _icon = yellowPinLocationIcon;
-          } else if (liveSafehouses[i]["capacity"] > liveSafehouses[i]["reserved"]) {
+          } else if (liveSafehouses[i]["capacity"] >
+              liveSafehouses[i]["reserved"]) {
             // If the safehouse is available
             _icon = greenPinLocationIcon;
           } else {
             // If the location is the user's current one
             _icon = BitmapDescriptor.defaultMarker;
           }
+
+          if (data[i]["ownerID"] == uuid) {
+            isOwner = true;
+          }
+
+          /* if (data[i]["reservations"] != null) {
+            for (var reservation in data[i]["reservations"]) {
+              print(reservation.toString());
+            }
+          } */
 
           // Destination Location Marker
           double latitude = liveSafehouses[i]["latitude"];
@@ -181,8 +187,8 @@ class MapState extends State<MyMap> {
             position: LatLng(latitude, longitude),
             onTap: () async {
               if (!liveSafehouses[i]["compromised"]) {
-                Safehouse currentSafehouse = Safehouse.fromJSON(liveSafehouses[i]);
-                currentSafehouse.ownerID = await setUserID();
+                Safehouse currentSafehouse =
+                    Safehouse.fromJSON(liveSafehouses[i]);
                 showModalBottomSheet<void>(
                   context: context,
                   isScrollControlled: true,
@@ -202,14 +208,15 @@ class MapState extends State<MyMap> {
                         ),
                         child: new Center(
                           child: MySafehouse(
-                            index: i,
-                            safehouseInfo: currentSafehouse,
-                            userLocation: _position,
-                            geolocator: geolocator,
-                            markers: _markers,
-                            polylines: shownPolylines,
-                            icon: _icon
-                          ),
+                              index: i,
+                              isOwner: isOwner,
+                              userID: widget.userID,
+                              safehouseInfo: currentSafehouse,
+                              userLocation: _position,
+                              geolocator: geolocator,
+                              markers: _markers,
+                              polylines: shownPolylines,
+                              icon: _icon),
                         ),
                       ),
                     );

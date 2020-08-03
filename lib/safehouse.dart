@@ -26,15 +26,7 @@ class Safehouse {
   factory Safehouse.fromJSON(Map<dynamic, dynamic> json) => _itemFromJSON(json);
 
   static Safehouse _itemFromJSON(Map<dynamic, dynamic> json) {
-    String markerAddress = json["streetNumber"].toString() +
-        " " +
-        json["streetName"].toString() +
-        ", " +
-        json["city"].toString() +
-        " " +
-        json["state"].toString() +
-        " " +
-        json["country"].toString();
+    String markerAddress = json["address"].toString();
 
     return Safehouse(
         name: json['name'] as String,
@@ -77,19 +69,23 @@ class Safehouse {
 
 // ignore: must_be_immutable
 class MySafehouse extends StatefulWidget {
-  MySafehouse({
-    Key key,
-    this.index,
-    this.safehouseInfo,
-    this.title,
-    this.userLocation,
-    this.geolocator,
-    this.markers,
-    this.polylines,
-    this.icon
-  }) : super(key: key);
+  MySafehouse(
+      {Key key,
+      this.isOwner,
+      this.index,
+      this.safehouseInfo,
+      this.title,
+      this.userLocation,
+      this.geolocator,
+      this.markers,
+      this.polylines,
+      this.userID,
+      this.icon})
+      : super(key: key);
 
+  final bool isOwner;
   final int index;
+  final String userID;
 
   final Safehouse safehouseInfo;
 
@@ -108,6 +104,7 @@ class MySafehouse extends StatefulWidget {
 class SafehouseState extends State<MySafehouse> {
   final _formKey = GlobalKey<FormState>();
   final textController = TextEditingController();
+  final textController2 = TextEditingController();
 
   Size screenSize(BuildContext context) {
     return MediaQuery.of(context).size;
@@ -211,7 +208,7 @@ class SafehouseState extends State<MySafehouse> {
           margin: EdgeInsets.symmetric(vertical: 5.0),
           height: 200.0,
           child: ListView(
-      scrollDirection: Axis.horizontal,
+            scrollDirection: Axis.horizontal,
             children: <Widget>[
               for (int i = 0; i < 5; i++)
                 Card(
@@ -350,64 +347,76 @@ class SafehouseState extends State<MySafehouse> {
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: <Widget>[
                                     Padding(
-                                      padding: EdgeInsets.all(20),
+                                      padding: EdgeInsets.all(3),
                                       child: TextFormField(
                                         style: TextStyle(
                                           color: Colors.white,
                                         ),
-                                        controller: textController,
+                                        controller: textController2,
                                         decoration: const InputDecoration(
-                                          hintText:
-                                              'Enter the Number of Residents',
+                                          hintText: 'Enter Your Name',
                                           hintStyle:
                                               TextStyle(color: Colors.grey),
                                           fillColor: Colors.white,
                                         ),
                                         validator: (value) {
                                           if (value.isEmpty) {
-                                            print("Value is empty: true -->" + value);
-                                            return 'Please enter a value';
+                                            return 'Please Enter a Name';
                                           }
-                                          int val;
-                                          if ((val = int.tryParse(textController.text)) == null) { // If not a number
-                                            print("Value is alphabet or contains non-numerical characters");
-                                            return "Please enter a valid number";
-                                          }
-                                          val = int.parse(textController.text);
-                                          if (val <= 0) {
-                                            return 'Please Enter a Number above 0';
-                                          } else if (val > (widget.safehouseInfo.capacity - widget.safehouseInfo
-                                                      .reserved)) {
-                                            return 'There are only ' +
-                                                (widget.safehouseInfo
-                                                            .capacity -
-                                                        widget.safehouseInfo
-                                                            .reserved)
-                                                    .toString() +
-                                                ' Spots Available';
-                                          } else {
-                                            int total = widget.safehouseInfo.reserved + int.parse(textController.text);
-                                            // Update values
-                                            databaseService
-                                                .updateFirebaseDatabase(
-                                                widget.index,
-                                                "reserved",
-                                                (total));
-                                            // Refresh and rebuilt map.dart to display updates
-                                            bool isFull = total == widget.safehouseInfo.capacity;
-                                            setState(() {
+                                          return null;
+                                        },
+                                      ),
+                                    ),
+                                    Padding(
+                                      padding: EdgeInsets.all(3),
+                                      child: TextFormField(
+                                          style: TextStyle(
+                                            color: Colors.white,
+                                          ),
+                                          controller: textController,
+                                          decoration: const InputDecoration(
+                                            hintText:
+                                                'Enter the Number of Residents',
+                                            hintStyle:
+                                                TextStyle(color: Colors.grey),
+                                            fillColor: Colors.white,
+                                          ),
+                                          validator: (value) {
+                                            if (value.isEmpty) {
+                                              print("Value is empty: true -->" +
+                                                  value);
+                                              return 'Please enter a value';
+                                            }
+                                            int val;
+                                            if ((val = int.tryParse(
+                                                    textController.text)) ==
+                                                null) {
+                                              // If not a number
+                                              print(
+                                                  "Value is alphabet or contains non-numerical characters");
+                                              return "Please enter a valid number";
+                                            }
+                                            val =
+                                                int.parse(textController.text);
+                                            if (val <= 0) {
+                                              return 'Please Enter a Number above 0';
+                                            } else if (val >
+                                                (widget.safehouseInfo.capacity -
+                                                    widget.safehouseInfo
+                                                        .reserved)) {
+                                              return 'There are only ' +
+                                                  (widget.safehouseInfo
+                                                              .capacity -
+                                                          widget.safehouseInfo
+                                                              .reserved)
+                                                      .toString() +
+                                                  ' Spots Available';
+                                            } else {
+                                              Navigator.pop(context);
                                               Snackbars
                                                   .showReservationComfirmationSnackBar();
-                                              widget.icon = isFull ? new MapState().setCustomMapPins()[1] : new MapState().setCustomMapPins()[0];
-                                              print(widget.icon.toString());
-                                            });
-                                            Navigator.pop(context);
-
-                                            return null;
-
-                                          }
-                                        }
-                                      ),
+                                            }
+                                          }),
                                     ),
                                   ],
                                 ),
@@ -430,10 +439,55 @@ class SafehouseState extends State<MySafehouse> {
                                     child: RaisedButton(
                                       textColor: Colors.black,
                                       color: Colors.white,
-                                      onPressed: () {
+                                      onPressed: () async {
                                         if (_formKey.currentState.validate()) {
                                           try {
-                                            int.parse(textController.text);
+                                            var results = await databaseService
+                                                .getPropertyFromFirebaseDatabase(
+                                                    widget.index,
+                                                    "reservations");
+                                            if (results == null) {
+                                              print("It is null");
+                                              databaseService
+                                                  .updateFirebaseDatabase(
+                                                      widget.index,
+                                                      "reservations", {
+                                                widget.userID: [
+                                                  {
+                                                    "spots": int.parse(
+                                                        textController.text)
+                                                  },
+                                                  {
+                                                    "userName":
+                                                        textController2.text
+                                                  }
+                                                ]
+                                              });
+                                            } else {
+                                              print("It is has something: " +
+                                                  results);
+                                              var temp = [];
+                                              for (var result in results) {
+                                                temp.add(result);
+                                              }
+                                              temp.add({
+                                                widget.userID: [
+                                                  {
+                                                    "spots": int.parse(
+                                                        textController.text)
+                                                  },
+                                                  {
+                                                    "userName":
+                                                        textController2.text
+                                                  }
+                                                ]
+                                              });
+                                              databaseService
+                                                  .updateFirebaseDatabase(
+                                                      widget.index,
+                                                      "reservations",
+                                                      temp);
+                                            }
                                             return null;
                                           } catch (e) {
                                             return "Woops";

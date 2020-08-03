@@ -33,6 +33,16 @@ class DatabaseService {
     return safehouseData.value;
   }
 
+  getPropertyFromFirebaseDatabase(int index, String property) async {
+    var propertyValue = await database
+        .child("Safehouses")
+        .child(index.toString())
+        .child(property)
+        .once();
+
+    return propertyValue.value;
+  }
+
   // That function will give you a single object i.e. our desired safehouse
   // If it is, you'll have to increment the values in the object, and upload that back to Firebase (which I will do if you don't wanna)
   updateFirebaseDatabase(int index, String property, Object value) async {
