@@ -41,6 +41,11 @@ class MapState extends State<MyMap> {
     _getCurrentLocation();
     setCustomMapPins();
     displayCurrentSafehouses();
+    setInitialSafehouseData();
+  }
+
+  void setInitialSafehouseData() async {
+    liveSafehouses = await DatabaseService.getAllSafehouses();
   }
 
   Future<Uint8List> getBytesFromAsset(String path, int width) async {
@@ -53,7 +58,7 @@ class MapState extends State<MyMap> {
         .asUint8List();
   }
 
-  void setCustomMapPins() async {
+  setCustomMapPins() async {
     int pinSize = 95;
     // Retrieve image as bytes so it is resizable
     var greenPinLocationBytes =
@@ -67,6 +72,8 @@ class MapState extends State<MyMap> {
     var redPinLocationBytes =
         await getBytesFromAsset('assets/images/red_pin.png', pinSize);
     redPinLocationIcon = BitmapDescriptor.fromBytes(redPinLocationBytes);
+
+    return [greenPinLocationBytes, yellowPinLocationBytes, redPinLocationBytes];
   }
 
   _getCurrentLocation() {
@@ -114,7 +121,8 @@ class MapState extends State<MyMap> {
   }
 
   loadJson() async {
-    return await DatabaseService.getAllSafehouses();
+    print(liveSafehouses);
+    return liveSafehouses;
   }
 
   void displayUserLocationMarker() {
@@ -135,18 +143,22 @@ class MapState extends State<MyMap> {
 
     loadJson().then(
       (data) async {
+        if (data == null) return;
+
         for (var i = 0; i < data.length; i++) {
           var uuid = widget.userID;
           var isOwner = false;
 
           var _icon;
-          if (data[i]["compromised"]) {
+          if (liveSafehouses[i]["compromised"]) {
             // If the safehouse is compromised
             _icon = redPinLocationIcon;
-          } else if (data[i]["capacity"] == data[i]["reserved"]) {
+          } else if (liveSafehouses[i]["capacity"] ==
+              liveSafehouses[i]["reserved"]) {
             // If the safehouse is full
             _icon = yellowPinLocationIcon;
-          } else if (data[i]["capacity"] > data[i]["reserved"]) {
+          } else if (liveSafehouses[i]["capacity"] >
+              liveSafehouses[i]["reserved"]) {
             // If the safehouse is available
             _icon = greenPinLocationIcon;
           } else {
@@ -165,15 +177,18 @@ class MapState extends State<MyMap> {
           } */
 
           // Destination Location Marker
-          double latitude = data[i]["latitude"];
-          double longitude = data[i]["longitude"];
+          double latitude = liveSafehouses[i]["latitude"];
+          double longitude = liveSafehouses[i]["longitude"];
+
+          if (latitude == null || longitude == null) return;
 
           Marker destinationMarker = Marker(
             markerId: MarkerId("Marker #" + i.toString()),
             position: LatLng(latitude, longitude),
             onTap: () async {
-              if (!data[i]["compromised"]) {
-                Safehouse currentSafehouse = Safehouse.fromJSON(data[i]);
+              if (!liveSafehouses[i]["compromised"]) {
+                Safehouse currentSafehouse =
+                    Safehouse.fromJSON(liveSafehouses[i]);
                 showModalBottomSheet<void>(
                   context: context,
                   isScrollControlled: true,
@@ -193,15 +208,15 @@ class MapState extends State<MyMap> {
                         ),
                         child: new Center(
                           child: MySafehouse(
-                            index: i,
-                            isOwner: isOwner,
-                            userID: widget.userID,
-                            safehouseInfo: currentSafehouse,
-                            userLocation: _position,
-                            geolocator: geolocator,
-                            markers: _markers,
-                            polylines: shownPolylines,
-                          ),
+                              index: i,
+                              isOwner: isOwner,
+                              userID: widget.userID,
+                              safehouseInfo: currentSafehouse,
+                              userLocation: _position,
+                              geolocator: geolocator,
+                              markers: _markers,
+                              polylines: shownPolylines,
+                              icon: _icon),
                         ),
                       ),
                     );

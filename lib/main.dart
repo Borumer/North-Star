@@ -1,3 +1,4 @@
+import 'package:NorthStar/safehouse.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:NorthStar/map.dart';
@@ -22,6 +23,11 @@ class MyApp extends StatelessWidget {
         visualDensity: VisualDensity.adaptivePlatformDensity,
       ),
       home: HomePage(title: 'North Star'),
+      routes: <String, WidgetBuilder>{
+        '/map': (BuildContext context) => new MyApp(),
+        '/safehouse': (BuildContext context) => MySafehouse(title: 'safehouse'),
+        '/addmarker': (BuildContext context) => MyAddmarker(),
+      },
     );
   }
 }
@@ -62,6 +68,15 @@ class _HomePageState extends State<HomePage> {
       var id = uuid.v4();
       return id;
     }
+  }
+
+  void rebuildAllChildren(BuildContext context) {
+    void rebuild(Element el) {
+      el.markNeedsBuild();
+      el.visitChildren(rebuild);
+    }
+
+    (context as Element).visitChildren(rebuild);
   }
 
   @override

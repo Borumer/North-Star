@@ -24,14 +24,14 @@ class Snackbars {
     useScaffold(message);
   }
 
-  static showReservationComfirmationSnackBar() {
+  static void showReservationComfirmationSnackBar() {
     final message = SnackBar(
       content: Text(
         'Your Reservation has been Confirmed!',
         textAlign: TextAlign.center,
       ),
       backgroundColor: Colors.black,
-      duration: Duration(seconds: 5),
+      duration: Duration(seconds: 3),
     );
     useScaffold(message);
   }

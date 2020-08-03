@@ -9,6 +9,8 @@ import 'package:solid_bottom_sheet/solid_bottom_sheet.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:geolocator/geolocator.dart';
 
+import 'map.dart';
+
 class Safehouse {
   Safehouse(
       {this.address,
@@ -67,18 +69,19 @@ class Safehouse {
 
 // ignore: must_be_immutable
 class MySafehouse extends StatefulWidget {
-  MySafehouse({
-    Key key,
-    this.isOwner,
-    this.index,
-    this.safehouseInfo,
-    this.title,
-    this.userLocation,
-    this.geolocator,
-    this.markers,
-    this.polylines,
-    this.userID,
-  }) : super(key: key);
+  MySafehouse(
+      {Key key,
+      this.isOwner,
+      this.index,
+      this.safehouseInfo,
+      this.title,
+      this.userLocation,
+      this.geolocator,
+      this.markers,
+      this.polylines,
+      this.userID,
+      this.icon})
+      : super(key: key);
 
   final bool isOwner;
   final int index;
@@ -89,6 +92,7 @@ class MySafehouse extends StatefulWidget {
   final String title;
   final Position userLocation;
   final Geolocator geolocator;
+  BitmapDescriptor icon;
 
   Set<Marker> markers;
   final Set<Polyline> polylines;
@@ -366,51 +370,78 @@ class SafehouseState extends State<MySafehouse> {
                                     Padding(
                                       padding: EdgeInsets.all(3),
                                       child: TextFormField(
-                                        style: TextStyle(
-                                          color: Colors.white,
-                                        ),
-                                        controller: textController,
-                                        decoration: const InputDecoration(
-                                          hintText:
-                                              'Enter the Number of Residents',
-                                          hintStyle:
-                                              TextStyle(color: Colors.grey),
-                                          fillColor: Colors.white,
-                                        ),
-                                        validator: (value) {
-                                          if (value.isEmpty) {
-                                            return 'Please Enter a Valid Number';
-                                          } else {
-                                            try {
-                                              int.parse(textController.text);
-                                              if (int.parse(
-                                                      textController.text) <=
-                                                  0) {
-                                                return 'Please Enter a Number above 0';
-                                              } else if (int.parse(
-                                                      textController.text) >
-                                                  (widget.safehouseInfo
-                                                          .capacity -
-                                                      widget.safehouseInfo
-                                                          .reserved)) {
-                                                return 'There are only ' +
-                                                    (widget.safehouseInfo
-                                                                .capacity -
-                                                            widget.safehouseInfo
-                                                                .reserved)
-                                                        .toString() +
-                                                    ' Spots Available';
-                                              } else {
-                                                Navigator.pop(context);
-                                                return Snackbars
-                                                    .showReservationComfirmationSnackBar();
-                                              }
-                                            } catch (e) {
-                                              return "Please Enter a Valid Number";
+                                          style: TextStyle(
+                                            color: Colors.white,
+                                          ),
+                                          controller: textController,
+                                          decoration: const InputDecoration(
+                                            hintText:
+                                                'Enter the Number of Residents',
+                                            hintStyle:
+                                                TextStyle(color: Colors.grey),
+                                            fillColor: Colors.white,
+                                          ),
+                                          validator: (value) {
+                                            if (value.isEmpty) {
+                                              print("Value is empty: true -->" +
+                                                  value);
+                                              return 'Please enter a value';
                                             }
-                                          }
-                                        },
-                                      ),
+                                            int val;
+                                            if ((val = int.tryParse(
+                                                    textController.text)) ==
+                                                null) {
+                                              // If not a number
+                                              print(
+                                                  "Value is alphabet or contains non-numerical characters");
+                                              return "Please enter a valid number";
+                                            }
+                                            val =
+                                                int.parse(textController.text);
+                                            if (val <= 0) {
+                                              return 'Please Enter a Number above 0';
+                                            } else if (val >
+                                                (widget.safehouseInfo.capacity -
+                                                    widget.safehouseInfo
+                                                        .reserved)) {
+                                              return 'There are only ' +
+                                                  (widget.safehouseInfo
+                                                              .capacity -
+                                                          widget.safehouseInfo
+                                                              .reserved)
+                                                      .toString() +
+                                                  ' Spots Available';
+                                            } else {
+                                              try {
+                                                int.parse(textController.text);
+                                                if (int.parse(
+                                                        textController.text) <=
+                                                    0) {
+                                                  return 'Please Enter a Number above 0';
+                                                } else if (int.parse(
+                                                        textController.text) >
+                                                    (widget.safehouseInfo
+                                                            .capacity -
+                                                        widget.safehouseInfo
+                                                            .reserved)) {
+                                                  return 'There are only ' +
+                                                      (widget.safehouseInfo
+                                                                  .capacity -
+                                                              widget
+                                                                  .safehouseInfo
+                                                                  .reserved)
+                                                          .toString() +
+                                                      ' Spots Available';
+                                                } else {
+                                                  Navigator.pop(context);
+                                                  Snackbars
+                                                      .showReservationComfirmationSnackBar();
+                                                }
+                                              } catch (e) {
+                                                return "Please Enter a Valid Number";
+                                              }
+                                            }
+                                          }),
                                     ),
                                   ],
                                 ),
@@ -549,6 +580,10 @@ class SafehouseState extends State<MySafehouse> {
                                     Navigator.pop(context);
                                     databaseService.updateFirebaseDatabase(
                                         widget.index, "compromised", true);
+                                    setState(() {
+                                      widget.icon =
+                                          new MapState().redPinLocationIcon;
+                                    });
                                   },
                                   child: const Text('Okay'),
                                 ),
