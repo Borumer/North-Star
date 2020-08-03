@@ -399,6 +399,7 @@ class SafehouseState extends State<MySafehouse> {
                                               Snackbars
                                                   .showReservationComfirmationSnackBar();
                                               widget.icon = isFull ? new MapState().setCustomMapPins()[1] : new MapState().setCustomMapPins()[0];
+                                              print(widget.icon.toString());
                                             });
                                             Navigator.pop(context);
 
@@ -501,7 +502,9 @@ class SafehouseState extends State<MySafehouse> {
                                     databaseService.updateFirebaseDatabase(
                                         widget.index, "compromised", true);
                                     setState(() {
-                                      widget.icon = new MapState().redPinLocationIcon;
+                                      MapState ms = new MapState();
+                                      ms.initState();
+                                      widget.icon = ms.redPinLocationIcon;
                                     });
                                   },
                                   child: const Text('Okay'),

@@ -219,7 +219,9 @@ class MapState extends State<MyMap> {
                   ),
                 );
               } else {
-                Snackbars.showCompromisedSnackBar(i);
+                setState(() {
+                  _icon = Snackbars.showCompromisedSnackBar(i, _icon);
+                });
               }
             },
             icon: _icon,

@@ -1,7 +1,9 @@
 import 'package:NorthStar/strings.dart';
 import 'package:flutter/material.dart';
+import 'package:google_maps_flutter/google_maps_flutter.dart';
 
 import 'database.service.dart';
+import 'map.dart';
 
 /// Helper class for storing all snackbars
 /// Used so that similar snack bars can be used throughout the app
@@ -35,7 +37,8 @@ class Snackbars {
     useScaffold(message);
   }
 
-  static showCompromisedSnackBar(int index) {
+  static BitmapDescriptor showCompromisedSnackBar(int index, BitmapDescriptor icon) {
+    BitmapDescriptor newIcon = icon;
     final message = SnackBar(
       content: Text('This Safehouse is Compromised!'),
       backgroundColor: Colors.black,
@@ -72,7 +75,7 @@ class Snackbars {
                           color: Colors.red,
                         ),
                         onPressed: () {
-                          Navigator.pop(context);
+                          //Navigator.pop(topLevelContext);
                         },
                         child: const Text('Cancel'),
                       ),
@@ -80,10 +83,11 @@ class Snackbars {
                         textColor: Colors.black,
                         color: Colors.white,
                         onPressed: () {
-                          Navigator.pop(context);
                           var databaseService = new DatabaseService();
                           databaseService.updateFirebaseDatabase(
                               index, "compromised", false);
+                          var ms = new MapState();
+                          newIcon = ms.greenPinLocationIcon; // Set marker icon back to green
                         },
                         child: const Text('Proceed'),
                       ),
@@ -97,5 +101,6 @@ class Snackbars {
       ),
     );
     useScaffold(message);
+    return newIcon;
   }
 }
