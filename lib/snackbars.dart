@@ -7,6 +7,33 @@ import 'database.service.dart';
 /// Used so that similar snack bars can be used throughout the app
 /// Also used to store common properties and method calls of all snackbars
 class Snackbars {
+  static useScaffold(SnackBar sb) {
+    Scaffold.of(topLevelContext).showSnackBar(sb);
+  }
+
+  static showHome() {
+    final message = SnackBar(
+      content: Text(
+        'You are Here',
+        textAlign: TextAlign.center,
+      ),
+      backgroundColor: Colors.black,
+      duration: Duration(seconds: 3),
+    );
+    useScaffold(message);
+  }
+
+  static showReservationComfirmationSnackBar() {
+    final message = SnackBar(
+      content: Text(
+        'Your Reservation has been Confirmed!',
+        textAlign: TextAlign.center,
+      ),
+      backgroundColor: Colors.black,
+      duration: Duration(seconds: 5),
+    );
+    useScaffold(message);
+  }
 
   static showCompromisedSnackBar(int index) {
     final message = SnackBar(
@@ -14,11 +41,12 @@ class Snackbars {
       backgroundColor: Colors.black,
       duration: Duration(seconds: 5),
       action: SnackBarAction(
-        label: 'It is Safe',
+        label: 'IT IS SAFE',
         textColor: Colors.blue[600],
         onPressed: () async {
           // Some code to undo the change.
-          switch (await showDialog<String>(
+          await showDialog<String>(
+            barrierDismissible: false,
             context: topLevelContext,
             builder: (BuildContext context) {
               // DONE For Reserve, you'll need to give a dialogue for the number of people, and check if it's possible.
@@ -44,7 +72,7 @@ class Snackbars {
                           color: Colors.red,
                         ),
                         onPressed: () {
-                          Navigator.pop(context, "Cancel");
+                          Navigator.pop(context);
                         },
                         child: const Text('Cancel'),
                       ),
@@ -52,7 +80,10 @@ class Snackbars {
                         textColor: Colors.black,
                         color: Colors.white,
                         onPressed: () {
-                          Navigator.pop(context, "Proceed");
+                          Navigator.pop(context);
+                          var databaseService = new DatabaseService();
+                          databaseService.updateFirebaseDatabase(
+                              index, "compromised", false);
                         },
                         child: const Text('Proceed'),
                       ),
@@ -61,37 +92,10 @@ class Snackbars {
                 ],
               );
             },
-          )) {
-            case "Proceed":
-            //Add Function
-              var databaseService = new DatabaseService();
-              databaseService.updateFirebaseDatabase(
-                  index, "compromised", false);
-              break;
-          }
+          );
         },
       ),
     );
     useScaffold(message);
-  }
-
-  static showInputValidationSnackBar() {
-    final message = SnackBar(
-      content: Text('Please Enter a Value'),
-      backgroundColor: Colors.black,
-      duration: Duration(seconds: 5),
-      action: SnackBarAction(
-        label: 'Okay',
-        textColor: Colors.blue[600],
-        onPressed: () async {
-          // Some code to undo the change.
-        },
-      ),
-    );
-    useScaffold(message);
-  }
-
-  static useScaffold(SnackBar sb) {
-    Scaffold.of(topLevelContext).showSnackBar(sb);
   }
 }

@@ -1,23 +1,25 @@
 import 'package:NorthStar/database.service.dart';
+import 'package:NorthStar/snackbars.dart';
+import 'package:NorthStar/strings.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter_polyline_points/flutter_polyline_points.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
+import 'package:solid_bottom_sheet/solid_bottom_sheet.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:geolocator/geolocator.dart';
-import 'strings.dart';
 
 class Safehouse {
-  Safehouse({
-    this.address,
-    this.capacity,
-    this.reserved,
-    this.compromised,
-    this.ownerName,
-    this.markerPos,
-    this.phoneNum,
-    this.name
-  });
+  Safehouse(
+      {this.address,
+      this.capacity,
+      this.reserved,
+      this.compromised,
+      this.ownerName,
+      this.ownerID,
+      this.markerPos,
+      this.phoneNum,
+      this.name});
 
   factory Safehouse.fromJSON(Map<dynamic, dynamic> json) => _itemFromJSON(json);
 
@@ -28,23 +30,25 @@ class Safehouse {
         ", " +
         json["city"].toString() +
         " " +
-        json["state"].toString();
+        json["state"].toString() +
+        " " +
+        json["country"].toString();
 
     return Safehouse(
-      name: json['name'] as String,
-      address: markerAddress,
-      capacity: json['capacity'] as int,
-      reserved: json['reserved'] as int,
-      compromised: json['compromised'] as bool,
-      ownerName: json['ownerName'] as String,
-      markerPos: new Position(latitude: json['latitude'], longitude: json['longitude']),
-      phoneNum: json['phoneNum']
-    );
-
+        name: json['name'] as String,
+        address: markerAddress,
+        capacity: json['capacity'] as int,
+        reserved: json['reserved'] as int,
+        compromised: json['compromised'] as bool,
+        ownerName: json['ownerName'] as String,
+        markerPos: new Position(
+            latitude: json['latitude'], longitude: json['longitude']),
+        phoneNum: json['phoneNum']);
   }
 
   /// The name of the safehouse
   String name;
+
   /// The physical address of the safehouse
   String address;
 
@@ -53,17 +57,20 @@ class Safehouse {
 
   /// The number of spaces already reserved at the safehouse (including people already there)
   int reserved;
+
   /// Whether the safehouse is compromised by white slavecatchers
   bool compromised;
 
   /// The name of the safehouse owner
-  String ownerName;
+  final String ownerName;
+
+  String ownerID;
 
   /// The global position of the safehouse
-  Position markerPos;
+  final Position markerPos;
 
   /// The phone number to call the safehouse/safehouse owner
-  String phoneNum;
+  final String phoneNum;
 }
 
 // ignore: must_be_immutable
@@ -95,8 +102,8 @@ class MySafehouse extends StatefulWidget {
 }
 
 class SafehouseState extends State<MySafehouse> {
-
   final _formKey = GlobalKey<FormState>();
+  final textController = TextEditingController();
 
   Size screenSize(BuildContext context) {
     return MediaQuery.of(context).size;
@@ -118,10 +125,11 @@ class SafehouseState extends State<MySafehouse> {
     // minHeight: screenHeight(context, dividedBy: 3.1),
     // maxHeight: screenHeight(context, dividedBy: 1.5),
 
-    var databaseService =
-        new DatabaseService();
+    var databaseService = new DatabaseService();
+    SolidController _controller = SolidController();
 
     _createRoute() {
+      _controller.show();
       loadJson().then((data) async {
         // Object for PolylinePoints
         PolylinePoints polylinePoints;
@@ -138,7 +146,8 @@ class SafehouseState extends State<MySafehouse> {
           polylinePoints = PolylinePoints();
           // Generating the list of coordinates to be used for
           // drawing the polylines
-          PolylineResult result = await polylinePoints.getRouteBetweenCoordinates(
+          PolylineResult result =
+              await polylinePoints.getRouteBetweenCoordinates(
             apiKey, // Google Maps API Key
             PointLatLng(start.latitude, start.longitude),
             PointLatLng(destination.latitude, destination.longitude),
@@ -282,7 +291,8 @@ class SafehouseState extends State<MySafehouse> {
                   color: Colors.black,
                 ),
                 title: Text('SMS'),
-                subtitle: Text('Safehouse Owner: ' + widget.safehouseInfo.ownerName),
+                subtitle:
+                    Text('Safehouse Owner: ' + widget.safehouseInfo.ownerName),
                 onTap: () {
                   launch("sms:" + widget.safehouseInfo.phoneNum);
                 },
@@ -293,7 +303,8 @@ class SafehouseState extends State<MySafehouse> {
                   color: Colors.black,
                 ),
                 title: Text('Call'),
-                subtitle: Text('Safehouse Owner: ' + widget.safehouseInfo.ownerName),
+                subtitle:
+                    Text('Safehouse Owner: ' + widget.safehouseInfo.ownerName),
                 onTap: () {
                   launch("tel:" + widget.safehouseInfo.phoneNum);
                 },
@@ -305,7 +316,8 @@ class SafehouseState extends State<MySafehouse> {
           mainAxisSize: MainAxisSize.max,
           children: <Widget>[
             Visibility(
-              visible: widget.safehouseInfo.reserved != widget.safehouseInfo.capacity,
+              visible: widget.safehouseInfo.reserved !=
+                  widget.safehouseInfo.capacity,
               child: Expanded(
                 child: Container(
                   margin: EdgeInsets.all(5),
@@ -316,117 +328,83 @@ class SafehouseState extends State<MySafehouse> {
                       color: Colors.black,
                     ),
                     onPressed: () async {
-                      switch (await showDialog<String>(
-                          context: context,
-                          builder: (BuildContext context) {
-                            // DONE For Reserve, you'll need to give a dialogue for the number of people, and check if it's possible.
-                            return SimpleDialog(
-                              title: const Text(
-                                'Reserve Safehouse',
-                                style: TextStyle(color: Colors.white),
-                              ),
-                              backgroundColor: Colors.black,
-                              children: <Widget>[
-                                Form(
-                                  key: _formKey,
-                                  child: Column(
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment.start,
-                                    children: <Widget>[
-                                      TextFormField(
-                                        decoration: const InputDecoration(
-                                          hintText: 'Enter your email',
-                                        ),
-                                        validator: (value) {
-                                          if (value.isEmpty) {
-                                            return 'Please enter some text';
-                                          }
-                                          return null;
-                                        },
-                                        style: TextStyle(
-                                          color: Colors.lightGreen
-                                        )
-                                      ),
-                                      Padding(
-                                        padding: const EdgeInsets.symmetric(
-                                            vertical: 16.0),
-                                        child: RaisedButton(
-                                          onPressed: () {
-                                            // Validate will return true if the form is valid, or false if
-                                            // the form is invalid.
-                                            if (_formKey.currentState
-                                                .validate()) {
-                                              // Process data.
-                                            }
-                                          },
-                                          child: Text('Submit'),
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                                ButtonBar(
-                                  alignment: MainAxisAlignment.end,
-                                  children: <Widget>[
-                                    OutlineButton(
-                                      textColor: Colors.white,
-                                      borderSide: BorderSide(
-                                        color: Colors.white,
-                                      ),
-                                      onPressed: () {
-                                        Navigator.pop(context, "No");
-                                      },
-                                      child: const Text('Cancel'),
-                                    ),
-                                    RaisedButton(
-                                      textColor: Colors.black,
-                                      color: Colors.white,
-                                      onPressed: () {
-                                        Navigator.pop(context, "Yes");
-                                      },
-                                      child: const Text('Okay'),
-                                    ),
-                                  ],
-                                ),
-                              ],
-                            );
-                          })) {
-                        case "Yes":
-                          //Add Function
-                          break;
-                        case "No":
-                          //Add Function
-                          break;
-                      }
-                    },
-                    padding: EdgeInsets.all(15),
-                  ),
-                ),
-              ),
-            ),
-            Expanded(
-              child: Container(
-                margin: EdgeInsets.all(5),
-                child: RaisedButton(
-                  child: const Text('Compromised'),
-                  textColor: Colors.white,
-                  color: Colors.black,
-                  padding: EdgeInsets.all(15),
-                  onPressed: () async {
-                    switch (await showDialog<String>(
+                      await showDialog<String>(
+                        barrierDismissible: false,
                         context: context,
                         builder: (BuildContext context) {
+                          // DONE For Reserve, you'll need to give a dialogue for the number of people, and check if it's possible.
                           return SimpleDialog(
                             title: const Text(
-                              'Declaring Compromised',
+                              'Reserve Safehouse',
                               style: TextStyle(color: Colors.white),
                             ),
                             backgroundColor: Colors.black,
                             children: <Widget>[
-                              ListTile(
-                                title: Text(
-                                  'This will Declare this Safehouse Compromised',
-                                  style: TextStyle(color: Colors.white),
+                              Form(
+                                key: _formKey,
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: <Widget>[
+                                    Padding(
+                                      padding: EdgeInsets.all(20),
+                                      child: TextFormField(
+                                        style: TextStyle(
+                                          color: Colors.white,
+                                        ),
+                                        controller: textController,
+                                        decoration: const InputDecoration(
+                                          hintText:
+                                              'Enter the Number of Residents',
+                                          hintStyle:
+                                              TextStyle(color: Colors.grey),
+                                          fillColor: Colors.white,
+                                        ),
+                                        validator: (value) {
+                                          if (value.isEmpty) {
+                                            return 'Please Enter a Valid Number';
+                                          } else {
+                                            try {
+                                              int.parse(textController.text);
+                                              if (int.parse(
+                                                      textController.text) <=
+                                                  0) {
+                                                return 'Please Enter a Number above 0';
+                                              } else if (int.parse(
+                                                      textController.text) >
+                                                  (widget.safehouseInfo
+                                                          .capacity -
+                                                      widget.safehouseInfo
+                                                          .reserved)) {
+                                                return 'There are only ' +
+                                                    (widget.safehouseInfo
+                                                                .capacity -
+                                                            widget.safehouseInfo
+                                                                .reserved)
+                                                        .toString() +
+                                                    ' Spots Available';
+                                              } else {
+                                                Navigator.pop(context);
+                                                //update values
+                                                databaseService
+                                                    .updateFirebaseDatabase(
+                                                        widget.index,
+                                                        "reserved",
+                                                        (widget.safehouseInfo
+                                                                .reserved +
+                                                            int.parse(
+                                                                textController
+                                                                    .text)));
+                                                return Snackbars
+                                                    .showReservationComfirmationSnackBar();
+                                              }
+                                            } catch (e) {
+                                              return "Please Enter a Valid Number";
+                                            }
+                                          }
+                                        },
+                                      ),
+                                    ),
+                                  ],
                                 ),
                               ),
                               ButtonBar(
@@ -442,24 +420,91 @@ class SafehouseState extends State<MySafehouse> {
                                     },
                                     child: const Text('Cancel'),
                                   ),
-                                  RaisedButton(
-                                    textColor: Colors.black,
-                                    color: Colors.white,
-                                    onPressed: () {
-                                      Navigator.pop(context, "Yes");
-                                    },
-                                    child: const Text('Okay'),
+                                  Padding(
+                                    padding: EdgeInsets.only(right: 5),
+                                    child: RaisedButton(
+                                      textColor: Colors.black,
+                                      color: Colors.white,
+                                      onPressed: () {
+                                        if (_formKey.currentState.validate()) {
+                                          try {
+                                            int.parse(textController.text);
+                                            return null;
+                                          } catch (e) {
+                                            return "Woops";
+                                          }
+                                        }
+                                      },
+                                      child: const Text('Okay'),
+                                    ),
                                   ),
                                 ],
                               ),
                             ],
                           );
-                        })) {
-                      case "Yes":
-                        databaseService.updateFirebaseDatabase(
-                            widget.index, "compromised", true);
-                        break;
-                    }
+                        },
+                      );
+                    },
+                    padding: EdgeInsets.all(15),
+                  ),
+                ),
+              ),
+            ),
+            Expanded(
+              child: Container(
+                margin: EdgeInsets.all(5),
+                child: RaisedButton(
+                  child: const Text('Compromised'),
+                  textColor: Colors.white,
+                  color: Colors.black,
+                  padding: EdgeInsets.all(15),
+                  onPressed: () async {
+                    await showDialog<String>(
+                      barrierDismissible: false,
+                      context: context,
+                      builder: (BuildContext context) {
+                        return SimpleDialog(
+                          title: const Text(
+                            'Declaring Compromised',
+                            style: TextStyle(color: Colors.white),
+                          ),
+                          backgroundColor: Colors.black,
+                          children: <Widget>[
+                            ListTile(
+                              title: Text(
+                                'This will Declare this Safehouse Compromised',
+                                style: TextStyle(color: Colors.white),
+                              ),
+                            ),
+                            ButtonBar(
+                              alignment: MainAxisAlignment.end,
+                              children: <Widget>[
+                                OutlineButton(
+                                  textColor: Colors.white,
+                                  borderSide: BorderSide(
+                                    color: Colors.white,
+                                  ),
+                                  onPressed: () {
+                                    Navigator.pop(context);
+                                  },
+                                  child: const Text('Cancel'),
+                                ),
+                                RaisedButton(
+                                  textColor: Colors.black,
+                                  color: Colors.white,
+                                  onPressed: () {
+                                    Navigator.pop(context);
+                                    databaseService.updateFirebaseDatabase(
+                                        widget.index, "compromised", true);
+                                  },
+                                  child: const Text('Okay'),
+                                ),
+                              ],
+                            ),
+                          ],
+                        );
+                      },
+                    );
                   },
                 ),
               ),

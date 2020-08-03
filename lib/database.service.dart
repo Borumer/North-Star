@@ -4,7 +4,7 @@ class DatabaseService {
   static DatabaseReference database = FirebaseDatabase.instance.reference();
 
   DatabaseService();
-
+  var a;
   // ignore: cancel_subscriptions
   var updateDatabase =
       FirebaseDatabase.instance.reference().onChildAdded.listen(onEntryAdded);
@@ -15,13 +15,13 @@ class DatabaseService {
       .listen(onEntryUpdated);
 
   static onEntryAdded(Event event) {
-    print("Dance: " + event.snapshot.value.toString());
-    print("New!");
+    // print("Dance: " + event.snapshot.value.toString());
+    // print("New!");
   }
 
   static onEntryUpdated(Event event) {
-    print("Disco: " + event.snapshot.value.toString());
-    print("Update!");
+    // print("Disco: " + event.snapshot.value.toString());
+    // print("Update!");
   }
 
   // DONE Write function which only pulls out the snapshot.value (like no for loops and if conditions)
@@ -41,9 +41,19 @@ class DatabaseService {
         .set(value);
   }
 
+  static addToFirebaseDatabase(Object safehouse) async {
+    var temp = [];
+    var safehouses = await getAllSafehouses();
+    for (var safehouse in safehouses) {
+      temp.add(safehouse);
+    }
+    temp.add(safehouse);
+    database.child("Safehouses").set(temp);
+  }
+
   // DONE Get all snackbars to work
   // DONE Finish drawing routes (polylines)
   // INPROGRESS Finish addmarker.dart
-  // TODO Connect marker database listener to UI
+  // TO DO Connect marker database listener to UI
 
 }

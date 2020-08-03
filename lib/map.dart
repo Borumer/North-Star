@@ -9,6 +9,8 @@ import 'dart:typed_data';
 import 'dart:ui' as ui;
 import 'package:flutter/services.dart';
 import 'package:NorthStar/snackbars.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:uuid/uuid.dart';
 import 'database.service.dart';
 
 class MyMap extends StatefulWidget {
@@ -24,23 +26,32 @@ class MapState extends State<MyMap> {
   BitmapDescriptor yellowPinLocationIcon;
   BitmapDescriptor redPinLocationIcon;
 
-  final _formKey = GlobalKey<FormState>();
-
   Set<Marker> _markers = {};
   Set<Polyline> shownPolylines;
 
   final Geolocator geolocator = Geolocator()..forceAndroidLocationManager;
-
   final firebaseDatabase = new FirebaseDatabase();
 
   @override
   void initState() {
     super.initState();
     topLevelContext = context;
+    shownPolylines = <Polyline>{};
+    setUserID();
     _getCurrentLocation();
     setCustomMapPins();
-    shownPolylines = <Polyline>{};
     displayCurrentSafehouses();
+  }
+
+  Future<String> setUserID() async {
+    final SharedPreferences prefs = await SharedPreferences.getInstance();
+    if (prefs.getString("uuid") != null) {
+      return prefs.getString("uuid");
+    } else {
+      var uuid = Uuid();
+      var id = uuid.v4();
+      return id;
+    }
   }
 
   Future<Uint8List> getBytesFromAsset(String path, int width) async {
@@ -123,85 +134,7 @@ class MapState extends State<MyMap> {
         markerId: MarkerId("Home"),
         position: getCenter(),
         onTap: () async {
-          await showDialog<String>(
-              context: context,
-              builder: (BuildContext context) {
-                // DONE For Reserve, you'll need to give a dialogue for the number of people, and check if it's possible.
-                return SimpleDialog(
-                  title: const Text(
-                    'Reserve Safehouse',
-                    style: TextStyle(color: Colors.white),
-                  ),
-                  backgroundColor: Colors.black,
-                  children: <Widget>[
-                    Form(
-                      key: _formKey,
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: <Widget>[
-                          Padding(
-                            padding: EdgeInsets.all(20),
-                            child: TextFormField(
-                              style: TextStyle(
-                                color: Colors.white,
-                              ),
-                              controller: textController,
-                              decoration: const InputDecoration(
-                                hintText: 'Enter the Number of Residents',
-                                hintStyle: TextStyle(color: Colors.grey),
-                                fillColor: Colors.white,
-                              ),
-                              validator: (value) {
-                                if (value.isEmpty) {
-                                  Snackbars.showInputValidationSnackBar();
-                                }
-                                return null;
-                              },
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                    ButtonBar(
-                      alignment: MainAxisAlignment.end,
-                      children: <Widget>[
-                        OutlineButton(
-                          textColor: Colors.white,
-                          borderSide: BorderSide(
-                            color: Colors.white,
-                          ),
-                          onPressed: () {
-                            Navigator.pop(context, "No");
-                          },
-                          child: const Text('Cancel'),
-                        ),
-                        RaisedButton(
-                          textColor: Colors.black,
-                          color: Colors.white,
-                          onPressed: () {
-                            Navigator.pop(context, "Yes");
-                            if (_formKey.currentState.validate()) {
-                              try {
-                                int.parse(textController.text);
-                              } catch (e) {
-                                print("Woops! Try Again!");
-                              }
-                              if (!(textController.text is int)) {
-                                print(int.parse(textController.text));
-                              } else if (int.parse(textController.text) > 0 &&
-                                  int.parse(textController.text) <= 8) {
-                                print(textController.text);
-                              }
-                            }
-                          },
-                          child: const Text('Okay'),
-                        ),
-                      ],
-                    ),
-                  ],
-                );
-              }
-           );
+          Snackbars.showHome();
         },
       ),
     );
@@ -211,7 +144,6 @@ class MapState extends State<MyMap> {
     // DONE Take the list, iterate through all the safehouses, make their markers(according to their capacity) and then generate the map
     loadJson().then(
       (data) async {
-        print("Length: " + data.length.toString());
         for (var i = 0; i < data.length; i++) {
           var _icon;
           if (data[i]["compromised"]) {
@@ -238,8 +170,7 @@ class MapState extends State<MyMap> {
             onTap: () async {
               if (!data[i]["compromised"]) {
                 Safehouse currentSafehouse = Safehouse.fromJSON(data[i]);
-                print(data[i]);
-                print(shownPolylines);
+                currentSafehouse.ownerID = await setUserID();
                 showModalBottomSheet<void>(
                   context: context,
                   isScrollControlled: true,
