@@ -18,6 +18,7 @@ class DatabaseService {
   static onEntryAdded(Event event) {
     print("Dance: " + event.snapshot.value.toString());
     print("New!");
+    liveSafehouses = event.snapshot.value;
   }
 
   static onEntryUpdated(Event event) {
@@ -33,6 +34,9 @@ class DatabaseService {
     return safehouseData.value;
   }
 
+  /// Gets and returns the value of a property at a certain index from the database
+  /// Param index the row of the Safehouses list from which the property is retrieved
+  /// Param property the name of the property
   getPropertyFromFirebaseDatabase(int index, String property) async {
     var propertyValue = await database
         .child("Safehouses")
@@ -63,9 +67,28 @@ class DatabaseService {
     database.child("Safehouses").set(temp);
   }
 
+  /// Whether any safehouse is already reserved for the current user
+  safehouseAlreadyReserved(String uuid) async {
+    var allSafehouses = await getAllSafehouses();
+    for (int i = 0; i < allSafehouses.length; i++) {
+      var reservations = allSafehouses[i]["reservations"];
+      if (reservations != null && reservations[uuid] != null) { // Current is reserved
+        return true;
+      }
+    }
+    return false;
+  }
+
   // DONE Get all snackbars to work
   // DONE Finish drawing routes (polylines)
-  // INPROGRESS Finish addmarker.dart
+  // DONE Finish addmarker.dart
   // INPROGRESS Connect marker database listener to UI
+  // INPROGRESS Reservations
+  // DONE Call reservations from the database
+  // DONE iterate through all objects, to get a list of their names
+  // Make a card with all the names and corresponding reserved spots
+  // DONE MARKER FOR LEAVE SAFEHOUSE BUTTON REPLACES RESERVE BUTTON
+  // TODO Logic for Leave Safehouse Button
+  // TODO Additional UI for a safehouse owner
 
 }

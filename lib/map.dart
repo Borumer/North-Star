@@ -131,8 +131,10 @@ class MapState extends State<MyMap> {
         markerId: MarkerId("Home"),
         position: getCenter(),
         onTap: () async {
-          Snackbars.showHome(widget.userID);
+          Snackbars.showHome();
           print(widget.userID);
+          var b = new DatabaseService().getPropertyFromFirebaseDatabase(10, "reservations");
+          print(b);
         },
       ),
     );

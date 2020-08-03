@@ -232,7 +232,7 @@ class AddmarkerState extends State<MyAddmarker> {
                                         "latitude": _latitude,
                                         "longitude": _longitude,
                                         "ownerID": widget.ownerID,
-                                        "name": textController0.text,
+                                        "ownerName": textController0.text,
                                         "phoneNum": textController2.text,
                                         "reserved": 0,
                                       };

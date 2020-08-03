@@ -66,6 +66,7 @@ class _HomePageState extends State<HomePage> {
       print("Bye");
       var uuid = Uuid();
       var id = uuid.v4();
+      prefs.setString("uuid", id);
       return id;
     }
   }

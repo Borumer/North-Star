@@ -105,6 +105,7 @@ class SafehouseState extends State<MySafehouse> {
   final _formKey = GlobalKey<FormState>();
   final textController = TextEditingController();
   final textController2 = TextEditingController();
+  bool hasReserved;
 
   Size screenSize(BuildContext context) {
     return MediaQuery.of(context).size;
@@ -122,10 +123,14 @@ class SafehouseState extends State<MySafehouse> {
     return DatabaseService.getAllSafehouses();
   }
 
+  setHasReserved() async {
+
+    hasReserved = await DatabaseService().safehouseAlreadyReserved(widget.userID);
+  }
+
   Widget build(BuildContext context) {
     // minHeight: screenHeight(context, dividedBy: 3.1),
     // maxHeight: screenHeight(context, dividedBy: 1.5),
-
     var databaseService = new DatabaseService();
     SolidController _controller = SolidController();
 
@@ -180,6 +185,7 @@ class SafehouseState extends State<MySafehouse> {
         print("Polyline Coordinates " + polylineCoordinates.toString());
       });
     }
+    String leaveSafehouseText = "Leave Safehouse";
 
     return ListView(
       padding: const EdgeInsets.all(4),
@@ -317,8 +323,8 @@ class SafehouseState extends State<MySafehouse> {
           mainAxisSize: MainAxisSize.max,
           children: <Widget>[
             Visibility(
-              visible: widget.safehouseInfo.reserved !=
-                  widget.safehouseInfo.capacity,
+              visible: widget.safehouseInfo.reserved <
+                  widget.safehouseInfo.capacity && !widget.isOwner && !hasReserved,
               child: Expanded(
                 child: Container(
                   margin: EdgeInsets.all(5),
@@ -416,6 +422,8 @@ class SafehouseState extends State<MySafehouse> {
                                               Snackbars
                                                   .showReservationComfirmationSnackBar();
                                             }
+
+                                            return null;
                                           }),
                                     ),
                                   ],
@@ -488,6 +496,13 @@ class SafehouseState extends State<MySafehouse> {
                                                       "reservations",
                                                       temp);
                                             }
+                                            var reserved = await databaseService.getPropertyFromFirebaseDatabase(widget.index, "reserved");
+                                            reserved += int.parse(
+                                                textController.text);
+                                            databaseService.updateFirebaseDatabase(
+                                                widget.index,
+                                                "reserved",
+                                                reserved);
                                             return null;
                                           } catch (e) {
                                             return "Woops";
@@ -503,6 +518,30 @@ class SafehouseState extends State<MySafehouse> {
                           );
                         },
                       );
+                    },
+                    padding: EdgeInsets.all(15),
+                  ),
+                ),
+              ),
+            ),
+            Visibility(
+              visible: !(widget.safehouseInfo.reserved <
+                  widget.safehouseInfo.capacity && !widget.isOwner && !hasReserved),
+              child: Expanded(
+                child: Container(
+                  margin: EdgeInsets.all(5),
+                  child: OutlineButton(
+                    child: Text(leaveSafehouseText),
+                    textColor: Colors.black,
+                    borderSide: BorderSide(
+                      color: Colors.black,
+                    ),
+                    onPressed: () async {
+                      setState(() {
+                        databaseService.updateFirebaseDatabase(widget.index, "reserved", widget.safehouseInfo.reserved - 1);
+                        databaseService.updateFirebaseDatabase(widget.index, "reservations", null);
+                        leaveSafehouseText = "Reserve";
+                      });
                     },
                     padding: EdgeInsets.all(15),
                   ),
