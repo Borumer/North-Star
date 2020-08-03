@@ -1,3 +1,4 @@
+import 'package:NorthStar/safehouse.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:NorthStar/map.dart';
@@ -20,6 +21,11 @@ class MyApp extends StatelessWidget {
         visualDensity: VisualDensity.adaptivePlatformDensity,
       ),
       home: HomePage(title: 'North Star'),
+      routes: <String, WidgetBuilder> {
+        '/map': (BuildContext context) => MyApp(),
+        '/safehouse': (BuildContext context) => MySafehouse(title: 'safehouse'),
+        '/addmarker': (BuildContext context) => MyAddmarker(),
+      },
     );
   }
 }
@@ -34,6 +40,14 @@ class HomePage extends StatefulWidget {
 }
 
 class _HomePageState extends State<HomePage> {
+  void rebuildAllChildren(BuildContext context) {
+    void rebuild(Element el) {
+      el.markNeedsBuild();
+      el.visitChildren(rebuild);
+    }
+    (context as Element).visitChildren(rebuild);
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -43,6 +57,19 @@ class _HomePageState extends State<HomePage> {
           style: TextStyle(color: Colors.white),
         ),
         backgroundColor: Colors.black,
+        actions: [
+          FlatButton.icon(
+              onPressed: () {
+                Navigator.popAndPushNamed(context, '/map');
+              },
+              icon: Icon(
+                Icons.sync,
+                size: 20,
+                color: Colors.white,
+              ),
+              label: Text("Sync")
+          )
+        ]
       ),
       body: MyMap(),
       floatingActionButton: FloatingActionButton(

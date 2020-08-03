@@ -1,3 +1,4 @@
+import 'package:NorthStar/strings.dart';
 import 'package:firebase_database/firebase_database.dart';
 
 class DatabaseService {
@@ -15,13 +16,14 @@ class DatabaseService {
       .listen(onEntryUpdated);
 
   static onEntryAdded(Event event) {
-    // print("Dance: " + event.snapshot.value.toString());
-    // print("New!");
+    print("Dance: " + event.snapshot.value.toString());
+    print("New!");
   }
 
   static onEntryUpdated(Event event) {
-    // print("Disco: " + event.snapshot.value.toString());
-    // print("Update!");
+    print("Disco: " + event.snapshot.value.toString());
+    print("Update!");
+    liveSafehouses = event.snapshot.value;
   }
 
   // DONE Write function which only pulls out the snapshot.value (like no for loops and if conditions)
@@ -54,6 +56,6 @@ class DatabaseService {
   // DONE Get all snackbars to work
   // DONE Finish drawing routes (polylines)
   // INPROGRESS Finish addmarker.dart
-  // TO DO Connect marker database listener to UI
+  // INPROGRESS Connect marker database listener to UI
 
 }

@@ -41,6 +41,11 @@ class MapState extends State<MyMap> {
     _getCurrentLocation();
     setCustomMapPins();
     displayCurrentSafehouses();
+    setInitialSafehouseData();
+  }
+
+  void setInitialSafehouseData() async {
+    liveSafehouses = await DatabaseService.getAllSafehouses();
   }
 
   Future<String> setUserID() async {
@@ -64,7 +69,7 @@ class MapState extends State<MyMap> {
         .asUint8List();
   }
 
-  void setCustomMapPins() async {
+  setCustomMapPins() async {
     int pinSize = 95;
     // Retrieve image as bytes so it is resizable
     var greenPinLocationBytes =
@@ -78,6 +83,8 @@ class MapState extends State<MyMap> {
     var redPinLocationBytes =
         await getBytesFromAsset('assets/images/red_pin.png', pinSize);
     redPinLocationIcon = BitmapDescriptor.fromBytes(redPinLocationBytes);
+
+    return [greenPinLocationBytes, yellowPinLocationBytes, redPinLocationBytes];
   }
 
   _getCurrentLocation() {
@@ -125,7 +132,8 @@ class MapState extends State<MyMap> {
   }
 
   loadJson() async {
-    return await DatabaseService.getAllSafehouses();
+    print (liveSafehouses);
+    return liveSafehouses;
   }
 
   void displayUserLocationMarker() {
@@ -144,15 +152,17 @@ class MapState extends State<MyMap> {
     // DONE Take the list, iterate through all the safehouses, make their markers(according to their capacity) and then generate the map
     loadJson().then(
       (data) async {
+        if (data == null) return;
+
         for (var i = 0; i < data.length; i++) {
           var _icon;
-          if (data[i]["compromised"]) {
+          if (liveSafehouses[i]["compromised"]) {
             // If the safehouse is compromised
             _icon = redPinLocationIcon;
-          } else if (data[i]["capacity"] == data[i]["reserved"]) {
+          } else if (liveSafehouses[i]["capacity"] == liveSafehouses[i]["reserved"]) {
             // If the safehouse is full
             _icon = yellowPinLocationIcon;
-          } else if (data[i]["capacity"] > data[i]["reserved"]) {
+          } else if (liveSafehouses[i]["capacity"] > liveSafehouses[i]["reserved"]) {
             // If the safehouse is available
             _icon = greenPinLocationIcon;
           } else {
@@ -161,15 +171,17 @@ class MapState extends State<MyMap> {
           }
 
           // Destination Location Marker
-          double latitude = data[i]["latitude"];
-          double longitude = data[i]["longitude"];
+          double latitude = liveSafehouses[i]["latitude"];
+          double longitude = liveSafehouses[i]["longitude"];
+
+          if (latitude == null || longitude == null) return;
 
           Marker destinationMarker = Marker(
             markerId: MarkerId("Marker #" + i.toString()),
             position: LatLng(latitude, longitude),
             onTap: () async {
-              if (!data[i]["compromised"]) {
-                Safehouse currentSafehouse = Safehouse.fromJSON(data[i]);
+              if (!liveSafehouses[i]["compromised"]) {
+                Safehouse currentSafehouse = Safehouse.fromJSON(liveSafehouses[i]);
                 currentSafehouse.ownerID = await setUserID();
                 showModalBottomSheet<void>(
                   context: context,
@@ -196,6 +208,7 @@ class MapState extends State<MyMap> {
                             geolocator: geolocator,
                             markers: _markers,
                             polylines: shownPolylines,
+                            icon: _icon
                           ),
                         ),
                       ),

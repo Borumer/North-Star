@@ -9,6 +9,8 @@ import 'package:solid_bottom_sheet/solid_bottom_sheet.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:geolocator/geolocator.dart';
 
+import 'map.dart';
+
 class Safehouse {
   Safehouse(
       {this.address,
@@ -84,6 +86,7 @@ class MySafehouse extends StatefulWidget {
     this.geolocator,
     this.markers,
     this.polylines,
+    this.icon
   }) : super(key: key);
 
   final int index;
@@ -93,6 +96,7 @@ class MySafehouse extends StatefulWidget {
   final String title;
   final Position userLocation;
   final Geolocator geolocator;
+  BitmapDescriptor icon;
 
   Set<Marker> markers;
   final Set<Polyline> polylines;
@@ -207,7 +211,7 @@ class SafehouseState extends State<MySafehouse> {
           margin: EdgeInsets.symmetric(vertical: 5.0),
           height: 200.0,
           child: ListView(
-            scrollDirection: Axis.horizontal,
+      scrollDirection: Axis.horizontal,
             children: <Widget>[
               for (int i = 0; i < 5; i++)
                 Card(
@@ -383,19 +387,27 @@ class SafehouseState extends State<MySafehouse> {
                                                         .toString() +
                                                     ' Spots Available';
                                               } else {
-                                                Navigator.pop(context);
-                                                //update values
+                                                // Update values
                                                 databaseService
                                                     .updateFirebaseDatabase(
-                                                        widget.index,
-                                                        "reserved",
-                                                        (widget.safehouseInfo
-                                                                .reserved +
-                                                            int.parse(
-                                                                textController
-                                                                    .text)));
-                                                return Snackbars
-                                                    .showReservationComfirmationSnackBar();
+                                                    widget.index,
+                                                    "reserved",
+                                                    (widget.safehouseInfo
+                                                        .reserved +
+                                                        int.parse(
+                                                            textController
+                                                                .text)));
+                                                // Refresh and rebuilt map.dart to display updates
+                                                setState(() {
+
+                                                  Snackbars
+                                                      .showReservationComfirmationSnackBar();
+                                                  Navigator.popAndPushNamed(context, "/map");
+
+                                                });
+
+                                                return null;
+
                                               }
                                             } catch (e) {
                                               return "Please Enter a Valid Number";
@@ -496,6 +508,9 @@ class SafehouseState extends State<MySafehouse> {
                                     Navigator.pop(context);
                                     databaseService.updateFirebaseDatabase(
                                         widget.index, "compromised", true);
+                                    setState(() {
+                                      widget.icon = new MapState().redPinLocationIcon;
+                                    });
                                   },
                                   child: const Text('Okay'),
                                 ),
