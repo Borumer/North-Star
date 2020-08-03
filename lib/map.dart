@@ -1,3 +1,4 @@
+import 'package:NorthStar/strings.dart';
 import 'package:firebase_database/firebase_database.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/cupertino.dart';
@@ -7,7 +8,7 @@ import 'package:geolocator/geolocator.dart';
 import 'dart:typed_data';
 import 'dart:ui' as ui;
 import 'package:flutter/services.dart';
-
+import 'package:NorthStar/snackbars.dart';
 import 'database.service.dart';
 
 class MyMap extends StatefulWidget {
@@ -35,6 +36,7 @@ class MapState extends State<MyMap> {
   @override
   void initState() {
     super.initState();
+    topLevelContext = context;
     _getCurrentLocation();
     setCustomMapPins();
     shownPolylines = <Polyline>{};
@@ -121,22 +123,6 @@ class MapState extends State<MyMap> {
         markerId: MarkerId("Home"),
         position: getCenter(),
         onTap: () async {
-          displaySnackbar(BuildContext context) {
-            final snackBar = SnackBar(
-              content: Text('Please Enter a Value'),
-              backgroundColor: Colors.black,
-              duration: Duration(seconds: 5),
-              action: SnackBarAction(
-                label: 'Okay',
-                textColor: Colors.blue[600],
-                onPressed: () async {
-                  // Some code to undo the change.
-                },
-              ),
-            );
-            //Scaffold.of(context).showSnackBar(snackBar);
-          }
-
           await showDialog<String>(
               context: context,
               builder: (BuildContext context) {
@@ -167,7 +153,7 @@ class MapState extends State<MyMap> {
                               ),
                               validator: (value) {
                                 if (value.isEmpty) {
-                                  displaySnackbar(context);
+                                  Snackbars.showInputValidationSnackBar();
                                 }
                                 return null;
                               },
@@ -214,7 +200,8 @@ class MapState extends State<MyMap> {
                     ),
                   ],
                 );
-              });
+              }
+           );
         },
       ),
     );
@@ -226,9 +213,6 @@ class MapState extends State<MyMap> {
       (data) async {
         print("Length: " + data.length.toString());
         for (var i = 0; i < data.length; i++) {
-
-
-
           var _icon;
           if (data[i]["compromised"]) {
             // If the safehouse is compromised
@@ -252,8 +236,6 @@ class MapState extends State<MyMap> {
             markerId: MarkerId("Marker #" + i.toString()),
             position: LatLng(latitude, longitude),
             onTap: () async {
-              // var databaseService = new DatabaseService(38.29, -122.28);
-              // var safehouse = await databaseService.getAllSafehouses();
               if (!data[i]["compromised"]) {
                 Safehouse currentSafehouse = Safehouse.fromJSON(data[i]);
                 print(data[i]);
@@ -293,72 +275,7 @@ class MapState extends State<MyMap> {
                   ),
                 );
               } else {
-                final snackBar = SnackBar(
-                  content: Text('This Safehouse is Compromised!'),
-                  backgroundColor: Colors.black,
-                  duration: Duration(seconds: 5),
-                  action: SnackBarAction(
-                    label: 'It is Safe',
-                    textColor: Colors.blue[600],
-                    onPressed: () async {
-                      // Some code to undo the change.
-                      switch (await showDialog<String>(
-                        context: context,
-                        builder: (BuildContext context) {
-                          // DONE For Reserve, you'll need to give a dialogue for the number of people, and check if it's possible.
-                          return SimpleDialog(
-                            title: const Text(
-                              'Declare Safe?',
-                              style: TextStyle(color: Colors.white),
-                            ),
-                            backgroundColor: Colors.black,
-                            children: <Widget>[
-                              ListTile(
-                                title: Text(
-                                  'This will Declare the Safehouse Safe again',
-                                  style: TextStyle(color: Colors.white),
-                                ),
-                              ),
-                              ButtonBar(
-                                alignment: MainAxisAlignment.end,
-                                children: <Widget>[
-                                  OutlineButton(
-                                    textColor: Colors.red,
-                                    borderSide: BorderSide(
-                                      color: Colors.red,
-                                    ),
-                                    onPressed: () {
-                                      Navigator.pop(context, "Cancel");
-                                    },
-                                    child: const Text('Cancel'),
-                                  ),
-                                  RaisedButton(
-                                    textColor: Colors.black,
-                                    color: Colors.white,
-                                    onPressed: () {
-                                      Navigator.pop(context, "Proceed");
-                                    },
-                                    child: const Text('Proceed'),
-                                  ),
-                                ],
-                              ),
-                            ],
-                          );
-                        },
-                      )) {
-                        case "Proceed":
-                          //Add Function
-                          var databaseService = new DatabaseService();
-                          databaseService.updateFirebaseDatabase(
-                              i, "compromised", false);
-                          break;
-                      }
-                    },
-                  ),
-                );
-                // Find the Scaffold in the widget tree and use
-                // it to show a SnackBar.
-                Scaffold.of(context).showSnackBar(snackBar);
+                Snackbars.showCompromisedSnackBar(i);
               }
             },
             icon: _icon,

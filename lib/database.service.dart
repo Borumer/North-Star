@@ -41,9 +41,9 @@ class DatabaseService {
         .set(value);
   }
 
-  // TODO Connect marker database listener to UI
+  // DONE Get all snackbars to work
   // DONE Finish drawing routes (polylines)
-  // TODO Finish addmarker.dart
-  // TODO Get all snackbars to work
+  // INPROGRESS Finish addmarker.dart
+  // TODO Connect marker database listener to UI
 
 }

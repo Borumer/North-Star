@@ -1,9 +1,11 @@
 import 'package:NorthStar/database.service.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/cupertino.dart';
+import 'package:flutter_polyline_points/flutter_polyline_points.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:geolocator/geolocator.dart';
+import 'strings.dart';
 
 class Safehouse {
   Safehouse({
@@ -42,12 +44,12 @@ class Safehouse {
   }
 
   /// The name of the safehouse
-  final String name;
+  String name;
   /// The physical address of the safehouse
-  final String address;
+  String address;
 
   /// The number of people able to be accomodated at the safehouse
-  final int capacity;
+  int capacity;
 
   /// The number of spaces already reserved at the safehouse (including people already there)
   int reserved;
@@ -55,13 +57,13 @@ class Safehouse {
   bool compromised;
 
   /// The name of the safehouse owner
-  final String ownerName;
+  String ownerName;
 
   /// The global position of the safehouse
-  final Position markerPos;
+  Position markerPos;
 
   /// The phone number to call the safehouse/safehouse owner
-  final String phoneNum;
+  String phoneNum;
 }
 
 // ignore: must_be_immutable
@@ -117,10 +119,9 @@ class SafehouseState extends State<MySafehouse> {
     // maxHeight: screenHeight(context, dividedBy: 1.5),
 
     var databaseService =
-        new DatabaseService(widget.safehouseInfo.markerPos.latitude, widget.safehouseInfo.markerPos.longitude);
+        new DatabaseService();
 
     _createRoute() {
-      _controller.show();
       loadJson().then((data) async {
         // Object for PolylinePoints
         PolylinePoints polylinePoints;
@@ -226,7 +227,7 @@ class SafehouseState extends State<MySafehouse> {
                   Icons.home,
                   color: Colors.black,
                 ),
-                title: Text(widget.address),
+                title: Text(widget.safehouseInfo.address),
                 onTap: () {
                   return false;
                 },
