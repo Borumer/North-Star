@@ -22,7 +22,7 @@ class MyApp extends StatelessWidget {
       ),
       home: HomePage(title: 'North Star'),
       routes: <String, WidgetBuilder> {
-        '/map': (BuildContext context) => MyApp(),
+        '/map': (BuildContext context) => new MyApp(),
         '/safehouse': (BuildContext context) => MySafehouse(title: 'safehouse'),
         '/addmarker': (BuildContext context) => MyAddmarker(),
       },
@@ -50,6 +50,7 @@ class _HomePageState extends State<HomePage> {
 
   @override
   Widget build(BuildContext context) {
+    rebuildAllChildren(context);
     return Scaffold(
       appBar: AppBar(
         title: Text(
@@ -60,7 +61,16 @@ class _HomePageState extends State<HomePage> {
         actions: [
           FlatButton.icon(
               onPressed: () {
-                Navigator.popAndPushNamed(context, '/map');
+                Navigator
+                    .push(
+                  context,
+                  new MaterialPageRoute(builder: (context) => new MyApp()),
+                )
+                    .then((value) {
+                  setState(() {
+
+                  });
+                });
               },
               icon: Icon(
                 Icons.sync,

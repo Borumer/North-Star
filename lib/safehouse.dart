@@ -365,55 +365,47 @@ class SafehouseState extends State<MySafehouse> {
                                         ),
                                         validator: (value) {
                                           if (value.isEmpty) {
-                                            return 'Please Enter a Valid Number';
-                                          } else {
-                                            try {
-                                              int.parse(textController.text);
-                                              if (int.parse(
-                                                      textController.text) <=
-                                                  0) {
-                                                return 'Please Enter a Number above 0';
-                                              } else if (int.parse(
-                                                      textController.text) >
-                                                  (widget.safehouseInfo
-                                                          .capacity -
-                                                      widget.safehouseInfo
-                                                          .reserved)) {
-                                                return 'There are only ' +
-                                                    (widget.safehouseInfo
-                                                                .capacity -
-                                                            widget.safehouseInfo
-                                                                .reserved)
-                                                        .toString() +
-                                                    ' Spots Available';
-                                              } else {
-                                                // Update values
-                                                databaseService
-                                                    .updateFirebaseDatabase(
-                                                    widget.index,
-                                                    "reserved",
-                                                    (widget.safehouseInfo
-                                                        .reserved +
-                                                        int.parse(
-                                                            textController
-                                                                .text)));
-                                                // Refresh and rebuilt map.dart to display updates
-                                                setState(() {
-
-                                                  Snackbars
-                                                      .showReservationComfirmationSnackBar();
-                                                  Navigator.popAndPushNamed(context, "/map");
-
-                                                });
-
-                                                return null;
-
-                                              }
-                                            } catch (e) {
-                                              return "Please Enter a Valid Number";
-                                            }
+                                            print("Value is empty: true -->" + value);
+                                            return 'Please enter a value';
                                           }
-                                        },
+                                          int val;
+                                          if ((val = int.tryParse(textController.text)) == null) { // If not a number
+                                            print("Value is alphabet or contains non-numerical characters");
+                                            return "Please enter a valid number";
+                                          }
+                                          val = int.parse(textController.text);
+                                          if (val <= 0) {
+                                            return 'Please Enter a Number above 0';
+                                          } else if (val > (widget.safehouseInfo.capacity - widget.safehouseInfo
+                                                      .reserved)) {
+                                            return 'There are only ' +
+                                                (widget.safehouseInfo
+                                                            .capacity -
+                                                        widget.safehouseInfo
+                                                            .reserved)
+                                                    .toString() +
+                                                ' Spots Available';
+                                          } else {
+                                            int total = widget.safehouseInfo.reserved + int.parse(textController.text);
+                                            // Update values
+                                            databaseService
+                                                .updateFirebaseDatabase(
+                                                widget.index,
+                                                "reserved",
+                                                (total));
+                                            // Refresh and rebuilt map.dart to display updates
+                                            bool isFull = total == widget.safehouseInfo.capacity;
+                                            setState(() {
+                                              Snackbars
+                                                  .showReservationComfirmationSnackBar();
+                                              widget.icon = isFull ? new MapState().setCustomMapPins()[1] : new MapState().setCustomMapPins()[0];
+                                            });
+                                            Navigator.pop(context);
+
+                                            return null;
+
+                                          }
+                                        }
                                       ),
                                     ),
                                   ],
