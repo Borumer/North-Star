@@ -107,6 +107,11 @@ class SafehouseState extends State<MySafehouse> {
   final textController2 = TextEditingController();
   bool hasReserved;
 
+  void initState() {
+    super.initState();
+    setHasReserved();
+  }
+
   Size screenSize(BuildContext context) {
     return MediaQuery.of(context).size;
   }
@@ -124,7 +129,6 @@ class SafehouseState extends State<MySafehouse> {
   }
 
   setHasReserved() async {
-
     hasReserved = await DatabaseService().safehouseAlreadyReserved(widget.userID);
   }
 
@@ -132,7 +136,14 @@ class SafehouseState extends State<MySafehouse> {
     // minHeight: screenHeight(context, dividedBy: 3.1),
     // maxHeight: screenHeight(context, dividedBy: 1.5),
     var databaseService = new DatabaseService();
+    var reservations;
     SolidController _controller = SolidController();
+
+    void setReservations() async {
+      reservations = await databaseService.getPropertyFromFirebaseDatabase(widget.index, "reservations");
+    }
+    setReservations();
+    setHasReserved();
 
     _createRoute() {
       _controller.show();
@@ -185,31 +196,14 @@ class SafehouseState extends State<MySafehouse> {
         print("Polyline Coordinates " + polylineCoordinates.toString());
       });
     }
-    String leaveSafehouseText = "Leave Safehouse";
-
+    String leaveSafehouseText = "Leave";
+    print("--------------");
+    print(hasReserved != null);
+    print(hasReserved != null && hasReserved);
     return ListView(
       padding: const EdgeInsets.all(4),
       children: <Widget>[
-        Card(
-          shadowColor: Colors.white,
-          color: Colors.black,
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: <Widget>[
-              ListTile(
-                leading: Icon(
-                  Icons.navigation,
-                  color: Colors.white,
-                ),
-                title: Text(
-                  'Get Directions',
-                  style: TextStyle(color: Colors.white),
-                ),
-                onTap: _createRoute,
-              ),
-            ],
-          ),
-        ),
+
         Container(
           margin: EdgeInsets.symmetric(vertical: 5.0),
           height: 200.0,
@@ -323,8 +317,8 @@ class SafehouseState extends State<MySafehouse> {
           mainAxisSize: MainAxisSize.max,
           children: <Widget>[
             Visibility(
-              visible: widget.safehouseInfo.reserved <
-                  widget.safehouseInfo.capacity && !widget.isOwner && !hasReserved,
+              visible: true,//widget.safehouseInfo.reserved <
+                  //widget.safehouseInfo.capacity && !widget.isOwner && (hasReserved == null || !hasReserved),
               child: Expanded(
                 child: Container(
                   margin: EdgeInsets.all(5),
@@ -525,8 +519,8 @@ class SafehouseState extends State<MySafehouse> {
               ),
             ),
             Visibility(
-              visible: !(widget.safehouseInfo.reserved <
-                  widget.safehouseInfo.capacity && !widget.isOwner && !hasReserved),
+              visible: true,//!widget.isOwner && !(widget.safehouseInfo.reserved <
+                  //widget.safehouseInfo.capacity) && hasReserved != null && hasReserved,
               child: Expanded(
                 child: Container(
                   margin: EdgeInsets.all(5),
@@ -537,83 +531,98 @@ class SafehouseState extends State<MySafehouse> {
                       color: Colors.black,
                     ),
                     onPressed: () async {
-                      setState(() {
-                        databaseService.updateFirebaseDatabase(widget.index, "reserved", widget.safehouseInfo.reserved - 1);
-                        databaseService.updateFirebaseDatabase(widget.index, "reservations", null);
-                        leaveSafehouseText = "Reserve";
-                      });
+                      var all = await DatabaseService.getAllSafehouses();
+                      for (int i = 0; i < all.length; i++) {
+                        var currentReservations = all[i]["reservations"];
+                        if (currentReservations != null && currentReservations[widget.userID] != null) {
+                          // Removes the reservations and reserved from the safehouse
+                          int reservedInt = all[i]["reserved"];
+                          databaseService.updateFirebaseDatabase(widget.index, "reserved", reservedInt - currentReservations[widget.userID][0]["spots"]);
+                          currentReservations[widget.userID] = null;
+                          databaseService.updateFirebaseDatabase(widget.index, "reservations", currentReservations);
+
+                        }
+                      }
+                      Navigator.pop(context);
                     },
                     padding: EdgeInsets.all(15),
                   ),
                 ),
               ),
             ),
-            Expanded(
-              child: Container(
-                margin: EdgeInsets.all(5),
-                child: RaisedButton(
-                  child: const Text('Compromised'),
-                  textColor: Colors.white,
-                  color: Colors.black,
-                  padding: EdgeInsets.all(15),
-                  onPressed: () async {
-                    await showDialog<String>(
-                      barrierDismissible: false,
-                      context: context,
-                      builder: (BuildContext context) {
-                        return SimpleDialog(
-                          title: const Text(
-                            'Declaring Compromised',
-                            style: TextStyle(color: Colors.white),
-                          ),
-                          backgroundColor: Colors.black,
-                          children: <Widget>[
-                            ListTile(
-                              title: Text(
-                                'This will Declare this Safehouse Compromised',
-                                style: TextStyle(color: Colors.white),
-                              ),
-                            ),
-                            ButtonBar(
-                              alignment: MainAxisAlignment.end,
-                              children: <Widget>[
-                                OutlineButton(
-                                  textColor: Colors.white,
-                                  borderSide: BorderSide(
-                                    color: Colors.white,
-                                  ),
-                                  onPressed: () {
-                                    Navigator.pop(context);
-                                  },
-                                  child: const Text('Cancel'),
-                                ),
-                                RaisedButton(
-                                  textColor: Colors.black,
-                                  color: Colors.white,
-                                  onPressed: () {
-                                    Navigator.pop(context);
-                                    databaseService.updateFirebaseDatabase(
-                                        widget.index, "compromised", true);
-                                    setState(() {
-                                      MapState ms = new MapState();
-                                      ms.initState();
-                                      widget.icon = ms.redPinLocationIcon;
-                                    });
-                                  },
-                                  child: const Text('Okay'),
-                                ),
-                              ],
-                            ),
-                          ],
-                        );
-                      },
-                    );
-                  },
-                ),
-              ),
-            ),
+
           ],
         ),
+        Row(
+        children: <Widget>[
+          Expanded(
+          child: Container(
+            margin: EdgeInsets.all(5),
+            child: RaisedButton(
+              child: const Text('Compromised'),
+              textColor: Colors.white,
+              color: Colors.black,
+              padding: EdgeInsets.all(15),
+              onPressed: () async {
+                await showDialog<String>(
+                  barrierDismissible: false,
+                  context: context,
+                  builder: (BuildContext context) {
+                    return SimpleDialog(
+                      title: const Text(
+                        'Declaring Compromised',
+                        style: TextStyle(color: Colors.white),
+                      ),
+                      backgroundColor: Colors.black,
+                      children: <Widget>[
+                        ListTile(
+                          title: Text(
+                            'This will Declare this Safehouse Compromised',
+                            style: TextStyle(color: Colors.white),
+                          ),
+                        ),
+                        ButtonBar(
+                          alignment: MainAxisAlignment.end,
+                          children: <Widget>[
+                            OutlineButton(
+                              textColor: Colors.white,
+                              borderSide: BorderSide(
+                                color: Colors.white,
+                              ),
+                              onPressed: () {
+                                Navigator.pop(context);
+                              },
+                              child: const Text('Cancel'),
+                            ),
+                            RaisedButton(
+                              textColor: Colors.black,
+                              color: Colors.white,
+                              onPressed: () {
+                                Navigator.pop(context);
+                                databaseService.updateFirebaseDatabase(
+                                    widget.index, "compromised", true);
+                                databaseService.updateFirebaseDatabase(widget.index, "reserved", 0);
+                                databaseService.updateFirebaseDatabase(widget.index, "reservations", null);
+                                setState(() {
+                                  MapState ms = new MapState();
+                                  ms.initState();
+                                  widget.icon = ms.redPinLocationIcon;
+                                });
+                              },
+                              child: const Text('Okay'),
+                            ),
+                          ],
+                        ),
+                      ],
+                    );
+                  },
+                );
+              },
+            ),
+          ),
+        ),
+    ]
+        )
       ],
     );
   }

@@ -152,15 +152,15 @@ class MapState extends State<MyMap> {
           var isOwner = false;
 
           var _icon;
-          if (liveSafehouses[i]["compromised"]) {
+          if (data[i]["compromised"]) {
             // If the safehouse is compromised
             _icon = redPinLocationIcon;
-          } else if (liveSafehouses[i]["capacity"] ==
-              liveSafehouses[i]["reserved"]) {
+          } else if (data[i]["capacity"] ==
+              data[i]["reserved"]) {
             // If the safehouse is full
             _icon = yellowPinLocationIcon;
-          } else if (liveSafehouses[i]["capacity"] >
-              liveSafehouses[i]["reserved"]) {
+          } else if (data[i]["capacity"] >
+              data[i]["reserved"]) {
             // If the safehouse is available
             _icon = greenPinLocationIcon;
           } else {

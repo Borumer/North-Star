@@ -60,10 +60,8 @@ class _HomePageState extends State<HomePage> {
   Future<String> setUserID() async {
     final SharedPreferences prefs = await SharedPreferences.getInstance();
     if (prefs.getString("uuid") != null) {
-      print("Hi");
       return prefs.getString("uuid");
     } else {
-      print("Bye");
       var uuid = Uuid();
       var id = uuid.v4();
       prefs.setString("uuid", id);

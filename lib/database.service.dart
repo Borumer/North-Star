@@ -72,6 +72,7 @@ class DatabaseService {
     var allSafehouses = await getAllSafehouses();
     for (int i = 0; i < allSafehouses.length; i++) {
       var reservations = allSafehouses[i]["reservations"];
+      if (reservations == null) continue;
       if (reservations != null && reservations[uuid] != null) { // Current is reserved
         return true;
       }
